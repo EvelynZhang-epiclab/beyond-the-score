@@ -32,11 +32,11 @@ function renderMetric(key) {
 }
 
 function table(headers,rows) {
-  return `<table><thead><tr>${headers.map(h=>`<th scope="col">${escapeHTML(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr class="${row.study?'study':''}">${row.values.map((cell,i)=>`<${i===0?'th scope="row"':'td'}${i>1?' class="num"':''}>${escapeHTML(cell === null?'—':cell)}</${i===0?'th':'td'}>`).join('')}</tr>`).join('')}</tbody></table>`;
+  return `<table><thead><tr>${headers.map(h=>`<th scope="col">${escapeHTML(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(row=>`<tr class="${row.study?'study':''}">${row.values.map((cell,i)=>`<${i===0?'th scope="row"':'td'}${i>0?' class="num"':''}>${escapeHTML(cell === null?'—':cell)}</${i===0?'th':'td'}>`).join('')}</tr>`).join('')}</tbody></table>`;
 }
 function renderTables() {
-  $('#rbm-table').innerHTML=table(['Configuration','Record','VOC ×100 ↑','τ-a ↑','Preference % ↑'],report.table2_rbm.rows.map(r=>({study:r[1]==='study',values:[r[0],r[1],r[2]?.toFixed(1)??null,r[3]?.toFixed(4)??null,r[4]?.toFixed(1)??null]})));
-  $('#robofail-table').innerHTML=table(['Configuration','Record','Label accuracy % ↑','Composite ROUGE-L ↑'],report.table5_robofail_aha.rows.map(r=>({study:r[1]==='study',values:[r[0],r[1],r[2].toFixed(2),r[3].toFixed(3)]})));
+  $('#rbm-table').innerHTML=table(['Configuration','VOC ×100 ↑','τ-a ↑','Preference % ↑'],report.table2_rbm.rows.map(r=>({study:r[1]==='study',values:[r[0],r[2]?.toFixed(1)??null,r[3]?.toFixed(4)??null,r[4]?.toFixed(1)??null]})));
+  $('#robofail-table').innerHTML=table(['Configuration','Label accuracy % ↑','Composite ROUGE-L ↑'],report.table5_robofail_aha.rows.map(r=>({study:r[1]==='study',values:[r[0],r[2].toFixed(2),r[3].toFixed(3)]})));
   const adaptations=report.table6_other_adaptations;
   $('#guardian-table').innerHTML=table(['Guardian adaptation','Exec. %','Plan. %'],adaptations.guardian.rows.map(r=>({values:r})));
   $('#primo-table').innerHTML=table(['PRIMO adaptation','Accuracy %'],adaptations.primo.rows.map(r=>({values:r})));
@@ -98,7 +98,7 @@ function selectFailure(id) {
   $('#failure-keyframes').innerHTML=c.keyframes.map(f=>`<button data-seek="${f.matched_source_time_seconds}" aria-label="Seek input frame ${f.index}, ${f.matched_source_time_seconds.toFixed(1)} seconds"><img loading="lazy" src="${f.image}" alt="Input observation ${f.index}"><span>Frame ${f.index} · ${f.matched_source_time_seconds.toFixed(1)}s</span></button>`).join('');
   $$('[data-seek]').forEach(b=>b.addEventListener('click',()=>{video.pause();video.currentTime=Number(b.dataset.seek);}));
   $('#failure-answers').innerHTML=`<article class="answer-card reference"><div><span class="eyebrow">RELEASED REFERENCE</span><span class="tag">${escapeHTML(c.reference_label)}</span></div><p>${escapeHTML(c.ground_truth)}</p></article>`+c.responses.map(r=>{const failure=r.answer.toLowerCase().startsWith('no');const correct=failure===(c.reference_label==='Failure');return `<article class="answer-card"><div><span class="eyebrow">ASTRA LOW · ${escapeHTML(r.condition)}</span><span class="answer-status ${correct?'match':''}">${correct?'Label matches':failure?'False alarm':'Missed failure'}</span></div><p>“${escapeHTML(r.answer)}”</p></article>`;}).join('')+`<p class="answer-note">${c.id===55?'Zero-shot matches the failure label but cites a different reason from the reference. With five examples, the same subtask is judged successful.':'Both conditions call this a failure, disagreeing with the released success label. These quotations do not independently establish whether the physical cut succeeded.'}</p>`;
-  $('#failure-question').textContent=c.question;
+  $('#failure-question').textContent=c.question.replace(/^<image>\s*/, '');
   $('#failure-input').src=c.original_input_image;$('#input-link').href=c.original_input_image;
 }
 
