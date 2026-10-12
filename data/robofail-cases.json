@@ -1,0 +1,117 @@
+{
+  "dataset": "AHA-adapted RoboFail",
+  "support": "57 questions from 15 trajectory groups",
+  "cases": [
+    {
+      "id": 55,
+      "title": "Missed grasp",
+      "task": "Grasp the stove knob",
+      "reference_label": "Failure",
+      "ground_truth": "No, The robot gripper fails to close the gripper.",
+      "question": "<image>\n In the image, it contains many frames from a single view at different time steps in a matrix arrangement depicting the robot arm grasp onto the stove knob.         Each frame is labeled with the corresponding timestep reflecting the temporal information from left to right.        The white grid represents future sub-tasks that has yet to happen and should be ignore.        For the given sub-tasks, first determine it has succeed by choosing from [\"yes\", \"no\"], and then explain the reason why the current sub-tasks has failed.",
+      "original_input_image": "assets/robofail/case-055-input.jpg",
+      "observation_contact_sheet": "assets/robofail/case-055-observations.jpg",
+      "keyframes": [
+        {
+          "index": 1,
+          "image": "assets/robofail/case-055-frame-1.jpg",
+          "matched_source_time_seconds": 17.6
+        },
+        {
+          "index": 2,
+          "image": "assets/robofail/case-055-frame-2.jpg",
+          "matched_source_time_seconds": 23.3
+        },
+        {
+          "index": 3,
+          "image": "assets/robofail/case-055-frame-3.jpg",
+          "matched_source_time_seconds": 44.0
+        },
+        {
+          "index": 4,
+          "image": "assets/robofail/case-055-frame-4.jpg",
+          "matched_source_time_seconds": 70.9
+        }
+      ],
+      "video": "assets/robofail/case-055-source-replay.mp4",
+      "poster": "assets/robofail/case-055-frame-4.jpg",
+      "source_episode": "heatPot2",
+      "source_duration_seconds": 91.4,
+      "responses": [
+        {
+          "condition": "Zero-shot",
+          "requested_model": "gpt-6-astra",
+          "reasoning_effort": "low",
+          "returned_model": "gpt-6-astra-2026-09-03",
+          "answer": "No. The gripper is positioned over the burner area rather than around a stove knob, so it has not established a secure grasp on the knob."
+        },
+        {
+          "condition": "External 5-shot",
+          "requested_model": "gpt-6-astra",
+          "reasoning_effort": "low",
+          "returned_model": "gpt-6-astra",
+          "answer": "Yes, the robot successfully grasped the stove knob."
+        }
+      ],
+      "selection": "Post-hoc qualitative illustration",
+      "video_caption": "Source episode replay. The model saw the released montage and question, not this continuous video.",
+      "mapping_note": "We independently matched the montage observations to source-video frames using pixel similarity and visual inspection. Times are approximate observation-frame positions, not author-provided failure intervals or model alarm times.",
+      "reference_failure_interval": null,
+      "model_alarm_times": null,
+      "evidence_note": "Ground-truth labels are those released by AHA. Model descriptions are quotations, not independently verified physical causes."
+    },
+    {
+      "id": 36,
+      "title": "False alarm on slicing",
+      "task": "Slice the carrot",
+      "reference_label": "Success",
+      "ground_truth": "Yes, the robot succeed at the sub-task.",
+      "question": "<image>\n In the image, it contains many frames from a single view at different time steps in a matrix arrangement depicting the robot arm slice the carrot.         Each frame is labeled with the corresponding timestep reflecting the temporal information from left to right.        The white grid represents future sub-tasks that has yet to happen and should be ignore.        For the given sub-tasks, first determine it has succeed by choosing from [\"yes\", \"no\"], and then explain the reason why the current sub-tasks has failed.",
+      "original_input_image": "assets/robofail/case-036-input.jpg",
+      "observation_contact_sheet": "assets/robofail/case-036-observations.jpg",
+      "keyframes": [
+        {
+          "index": 1,
+          "image": "assets/robofail/case-036-frame-1.jpg",
+          "matched_source_time_seconds": 13.766666666666667
+        },
+        {
+          "index": 2,
+          "image": "assets/robofail/case-036-frame-2.jpg",
+          "matched_source_time_seconds": 21.066666666666666
+        },
+        {
+          "index": 3,
+          "image": "assets/robofail/case-036-frame-3.jpg",
+          "matched_source_time_seconds": 62.03333333333333
+        }
+      ],
+      "video": "assets/robofail/case-036-source-replay.mp4",
+      "poster": "assets/robofail/case-036-frame-3.jpg",
+      "source_episode": "sauteeCarrot2",
+      "source_duration_seconds": 303.6333333333333,
+      "responses": [
+        {
+          "condition": "Zero-shot",
+          "requested_model": "gpt-6-astra",
+          "reasoning_effort": "low",
+          "returned_model": "gpt-6-astra-2026-09-03",
+          "answer": "No. The arm moves toward the carrot, but the blade does not complete a cut through it. The carrot remains intact on the board, with no visibly separated slice."
+        },
+        {
+          "condition": "External 5-shot",
+          "requested_model": "gpt-6-astra",
+          "reasoning_effort": "low",
+          "returned_model": "gpt-6-astra-2026-09-03",
+          "answer": "No, the carrot remains whole on the counter; the robot did not successfully cut it into slices."
+        }
+      ],
+      "selection": "Post-hoc qualitative illustration",
+      "video_caption": "Source episode replay. The model saw the released montage and question, not this continuous video.",
+      "mapping_note": "We independently matched the montage observations to source-video frames using pixel similarity and visual inspection. Times are approximate observation-frame positions, not author-provided failure intervals or model alarm times.",
+      "reference_failure_interval": null,
+      "model_alarm_times": null,
+      "evidence_note": "Ground-truth labels are those released by AHA. Model descriptions are quotations, not independently verified physical causes."
+    }
+  ]
+}

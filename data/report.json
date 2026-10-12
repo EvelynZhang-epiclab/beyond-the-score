@@ -1,0 +1,685 @@
+{
+  "source": {
+    "sha256": "643d230ded0b9b91f1c155bc5cff05e760d183ecc0541a53c1daf5c90127e36e",
+    "pages": 11,
+    "evidence_cutoff": "2026-09-23",
+    "title": "Beyond the Score: Early Evaluations of GPT-6 Astra as a Robot Critic",
+    "author_line": "Simple AI",
+    "individual_authors": [],
+    "status": "Preliminary technical report"
+  },
+  "scope": {
+    "page": 2,
+    "interfaces": [
+      {
+        "name": "Progress",
+        "support": "105 successful trajectories",
+        "input": "Task text and observed prefix; only current and preceding frames visible",
+        "reference": "Time-based; VOC is correlation ×100, not stage accuracy"
+      },
+      {
+        "name": "Independent ranking",
+        "support": "567 trajectories; 41 source–task groups",
+        "input": "Task text and eight frames from one trajectory",
+        "reference": "Success > suboptimal > failure; Kendall tau-a penalizes predicted ties"
+      },
+      {
+        "name": "Direct preference",
+        "support": "1,192 fixed pairs",
+        "input": "Both trajectories in same request",
+        "reference": "Split composition incompletely documented"
+      },
+      {
+        "name": "Subtask diagnosis",
+        "support": "57 questions; 15 trajectory groups; 23 successful, 34 failed subtasks",
+        "input": "Original keyframe montage and subtask question",
+        "reference": "Binary Success label accuracy; composite ROUGE-L"
+      }
+    ],
+    "icl": "Progress: one same-/similar-task training trajectory with six stage scores. Ranking: three random high/middle/low training trajectories, not requiring task match. RoboFail: five fixed external image-question-answer demos, reported disjoint by test trajectory."
+  },
+  "table2_rbm": {
+    "page": 3,
+    "columns": [
+      "configuration",
+      "source",
+      "voc_x100",
+      "kendall_tau_a",
+      "preference_pct"
+    ],
+    "rows": [
+      [
+        "GPT-6 Astra low (zero-shot)",
+        "study",
+        93.6,
+        0.8166,
+        92.4
+      ],
+      [
+        "GPT-6 Astra low (ICL)",
+        "study",
+        94.2,
+        0.7953,
+        null
+      ],
+      [
+        "GPT-5.6-sol low",
+        "study",
+        93.5,
+        0.75,
+        90.7
+      ],
+      [
+        "DpskV4.1-flash max",
+        "study",
+        89.7,
+        0.53,
+        82.2
+      ],
+      [
+        "RynnValue-8B",
+        "RynnValue Table 2",
+        null,
+        0.675,
+        null
+      ],
+      [
+        "RynnValue-4B",
+        "RynnValue Table 2",
+        null,
+        0.67,
+        null
+      ],
+      [
+        "Robometer / RBM-1M (paper v1)",
+        "Robometer Tables XIII XVI XVII",
+        94.8,
+        0.655,
+        82.5
+      ],
+      [
+        "Robometer / RBM-1M (web)",
+        "Robometer website detailed OOD tables",
+        94.0,
+        0.643,
+        82.5
+      ],
+      [
+        "Robometer / RoboReward data",
+        "Robometer paper",
+        92.7,
+        0.552,
+        null
+      ],
+      [
+        "RoboReward-4B",
+        "Robometer paper",
+        87.9,
+        0.502,
+        null
+      ],
+      [
+        "RoboReward-8B",
+        "Robometer paper",
+        88.2,
+        0.465,
+        null
+      ],
+      [
+        "RoboDopamine-8B (web)",
+        "Robometer website",
+        79.6,
+        0.453,
+        null
+      ],
+      [
+        "TOPReward / Qwen3-VL-8B",
+        "Robometer website",
+        39.7,
+        0.128,
+        null
+      ],
+      [
+        "GVL / GPT-5-mini",
+        "Robometer paper",
+        26.2,
+        0.199,
+        null
+      ],
+      [
+        "VLAC-8B",
+        "Robometer paper",
+        37.5,
+        0.049,
+        null
+      ],
+      [
+        "VLAC-2B",
+        "Robometer paper",
+        null,
+        0.077,
+        null
+      ],
+      [
+        "ReWiND / RBM-1M",
+        "Robometer paper",
+        50.8,
+        0.014,
+        null
+      ],
+      [
+        "RL-VLM-F / GPT-5-mini",
+        "Robometer paper",
+        null,
+        null,
+        55.5
+      ]
+    ],
+    "caveat": "Literature records not rerun or protocol-matched. Study 567 trajectories vs RynnValue 976 OOD suite. External preference uses 500 different-quality pairs per OOD source vs 1,192 study pairs of incompletely documented composition. Paper and website Robometer versions must remain distinct."
+  },
+  "table3_study_ranks": {
+    "page": 3,
+    "models_in_order": [
+      "GPT-6 Astra low zero-shot",
+      "GPT-5.6-sol low",
+      "DeepSeek-V4.1-Flash max"
+    ],
+    "voc_x100": [
+      93.6,
+      93.5,
+      89.7
+    ],
+    "kendall_tau_a": [
+      0.8166,
+      0.75,
+      0.53
+    ],
+    "preference_pct": [
+      92.4,
+      90.7,
+      82.2
+    ],
+    "scope": "Point-estimate ranks among the three study zero-shot models only; no equal-compute or significance claim"
+  },
+  "table4_bottle_counterexample": {
+    "page": 6,
+    "public_terminal_label": "success",
+    "selection": "post hoc illustration, not frequency estimate",
+    "rows": [
+      {
+        "condition": "zero-shot",
+        "terminal_score": 1.0,
+        "voc_unscaled": 0.9051,
+        "mse": 0.0407
+      },
+      {
+        "condition": "single-trajectory ICL",
+        "terminal_score": 0.35,
+        "voc_unscaled": 0.9536,
+        "mse": 0.1312
+      }
+    ],
+    "takeaway": "Higher time correlation can coexist with worse terminal completion estimate; MSE about 3.22x larger; public label retained, no independent visual adjudication."
+  },
+  "progress_diagnostics": {
+    "page": 6,
+    "voc_x100": [
+      93.6,
+      94.2
+    ],
+    "mse": [
+      0.0402,
+      0.039
+    ],
+    "n_trajectories": 105,
+    "voc_improved": 58,
+    "voc_declined": 35,
+    "voc_unchanged": 12,
+    "higher_voc_but_worse_mse": 11,
+    "banana_transfer": {
+      "lower_voc": 18,
+      "unchanged_voc": 1,
+      "total": 19
+    }
+  },
+  "ranking_decomposition": {
+    "page": 6,
+    "groups": 41,
+    "improved": 8,
+    "declined": 10,
+    "unchanged": 23,
+    "conditions": [
+      "zero-shot",
+      "three-trajectory reference ICL"
+    ],
+    "correct_strict_order_weight_pct": [
+      86.44,
+      83.21
+    ],
+    "tie_weight_pct": [
+      8.78,
+      13.11
+    ],
+    "inversion_weight_pct": [
+      4.78,
+      3.68
+    ],
+    "tau_a": [
+      0.8166,
+      0.7953
+    ],
+    "caveat": "Weighted outcomes consistent with score, not unweighted counts of independent pairs"
+  },
+  "table5_robofail_aha": {
+    "page": 7,
+    "columns": [
+      "configuration",
+      "source",
+      "label_accuracy_pct",
+      "composite_rouge_l"
+    ],
+    "rows": [
+      [
+        "Astra / zero-shot",
+        "study",
+        64.91,
+        0.185
+      ],
+      [
+        "Astra / 5 examples",
+        "study",
+        85.96,
+        0.499
+      ],
+      [
+        "LLaVA-v1.5-13B",
+        "AHA Tables 3/4",
+        0,
+        0.0
+      ],
+      [
+        "LLaVA-NeXT-34B",
+        "AHA Tables 3/4",
+        1.7,
+        0.018
+      ],
+      [
+        "Qwen-VL",
+        "AHA Tables 3/4",
+        0,
+        0.0
+      ],
+      [
+        "Gemini-1.5 Flash",
+        "AHA Tables 3/4",
+        0,
+        0.0
+      ],
+      [
+        "GPT-4o",
+        "AHA Tables 3/4",
+        55.4,
+        0.114
+      ],
+      [
+        "GPT-4o / 5-shot",
+        "AHA Tables 3/4",
+        57.1,
+        0.236
+      ],
+      [
+        "AHA-7B",
+        "AHA Tables 3/4",
+        62.5,
+        0.204
+      ],
+      [
+        "AHA-13B / Llama-2",
+        "AHA Tables 3/4",
+        64.3,
+        0.28
+      ],
+      [
+        "AHA-13B / Vicuna",
+        "AHA Tables 3/4",
+        66.1,
+        0.29
+      ]
+    ],
+    "caveat": "Exact question identity/count alignment unverified. Requested Astra config does not confirm returned backend equivalence. Published zeros preserved, not interpreted as intrinsic inability."
+  },
+  "table6_other_adaptations": {
+    "page": 8,
+    "guardian": {
+      "support": "153 execution / 30 planning examples",
+      "source": "Guardian v4 Tables 1/2",
+      "columns": [
+        "configuration",
+        "execution_accuracy_pct",
+        "planning_accuracy_pct"
+      ],
+      "rows": [
+        [
+          "GPT-4o",
+          80,
+          67
+        ],
+        [
+          "GPT-4o + Sentinel",
+          80,
+          63
+        ],
+        [
+          "RoboFAC-7B",
+          25,
+          5
+        ],
+        [
+          "I-Fail-Sense-3B",
+          43,
+          67
+        ],
+        [
+          "Cosmos-Reason2-8B",
+          78,
+          53
+        ],
+        [
+          "CLIP+MLP + GF",
+          42,
+          43
+        ],
+        [
+          "I-Fail-Sense-3B + GF",
+          76,
+          52
+        ],
+        [
+          "Cosmos-Reason2-8B + GF",
+          82,
+          70
+        ],
+        [
+          "Guardian-8B + GF",
+          86,
+          70
+        ]
+      ],
+      "GF": "Training on GuardianFail-36k"
+    },
+    "primo": {
+      "support": "100 Cosmos-curated examples",
+      "source": "PRIMO Table 3 / Appendix A.3",
+      "columns": [
+        "configuration",
+        "accuracy_pct"
+      ],
+      "rows": [
+        [
+          "Gemini 2.0 Flash",
+          67
+        ],
+        [
+          "GPT-4o",
+          63
+        ],
+        [
+          "OpenAI o1",
+          61
+        ],
+        [
+          "Claude-haiku-4.5",
+          59
+        ],
+        [
+          "Qwen2.5-VL-7B",
+          57.6
+        ],
+        [
+          "Nemotron-H-56B",
+          64
+        ],
+        [
+          "Cosmos-Reason1-7B",
+          60
+        ],
+        [
+          "Cosmos-Reason1-56B",
+          66.2
+        ],
+        [
+          "PRIMO (SFT)",
+          51
+        ],
+        [
+          "PRIMO (RL)",
+          63
+        ],
+        [
+          "PRIMO R1",
+          67
+        ]
+      ]
+    },
+    "caveat": "No Astra result on either adaptation; never place our 57-question Astra result in their rankings."
+  },
+  "table7_robofail_errors": {
+    "page": 9,
+    "conditions": [
+      "zero-shot",
+      "external five-example"
+    ],
+    "correct_success": [
+      5,
+      21
+    ],
+    "n_success": 23,
+    "correct_failure": [
+      32,
+      28
+    ],
+    "n_failure": 34,
+    "correct_total": [
+      37,
+      49
+    ],
+    "n_total": 57,
+    "accuracy_pct": [
+      64.91,
+      85.96
+    ],
+    "failure_recall_pct": [
+      94.12,
+      82.35
+    ],
+    "misses": [
+      2,
+      6
+    ],
+    "miss_rate_pct": [
+      5.88,
+      17.65
+    ],
+    "false_alarms": [
+      18,
+      2
+    ],
+    "false_alarm_rate_pct": [
+      78.26,
+      8.7
+    ],
+    "composite_rouge_l": [
+      0.185,
+      0.499
+    ],
+    "definition": "Failure is positive class; false alarm = actual success predicted failure; miss = actual failure predicted success. Offline question classification, not timestamped alarms."
+  },
+  "rouge_decomposition": {
+    "page": 9,
+    "figure_page": 10,
+    "formula": "R = (sum correct-success indicator + sum correct-failure indicator * stemmed ROUGE-L F1 of explanation) / 57",
+    "success_terms": [
+      0.0877,
+      0.3684
+    ],
+    "failure_explanation_terms": [
+      0.0969,
+      0.1305
+    ],
+    "success_term_delta": 0.2807,
+    "composite_delta": 0.3144,
+    "success_share_gain_pct": 89.3,
+    "failure_share_gain_pct": 10.7,
+    "caveat": "Not semantic explanation accuracy or causal attribution; lexical overlap and detected-failure subset both matter."
+  },
+  "knob_case": {
+    "page": 9,
+    "reference": "Failure because gripper did not close",
+    "zero_shot": "Correct failure label but explanation points to incorrect grasp location",
+    "five_example": "Predicts success on same failed subtask",
+    "caveat": "Post-hoc selected; neither model rationale validated as physical cause"
+  },
+  "figures": [
+    {
+      "figure": 1,
+      "page": 4,
+      "topic": "RBM progress VOC external/study horizontal bars"
+    },
+    {
+      "figure": 2,
+      "page": 5,
+      "topic": "RBM trajectory Kendall external/study horizontal bars"
+    },
+    {
+      "figure": 3,
+      "page": 5,
+      "topic": "RBM preference external/study horizontal bars"
+    },
+    {
+      "figure": 4,
+      "page": 6,
+      "topic": "Ranking strict-order/tie/inversion decomposition"
+    },
+    {
+      "figure": 5,
+      "page": 7,
+      "topic": "RoboFail label accuracy and composite ROUGE-L study vs AHA literature"
+    },
+    {
+      "figure": 6,
+      "page": 8,
+      "topic": "Guardian and PRIMO separate RoboFail adaptations"
+    },
+    {
+      "figure": 7,
+      "page": 10,
+      "topic": "ROUGE-L success/failure contribution stacked bars"
+    }
+  ],
+  "asset_note": "PDF figures are vector content; no embedded raster images, robot frames, or videos. Rebuild interactive charts from table data, or crop/render figures. Add source-linked experimental videos separately, with replay/input distinction.",
+  "limitations": [
+    {
+      "pages": [
+        1,
+        2,
+        10
+      ],
+      "text": "Offline exploratory study; no training, control, policy learning or RL success measured."
+    },
+    {
+      "pages": [
+        2,
+        9,
+        10
+      ],
+      "text": "RoboFail backend snapshot consistency unconﬁrmed; ICL difference is observational not causal."
+    },
+    {
+      "pages": [
+        2,
+        4,
+        10
+      ],
+      "text": "Literature protocols and samples differ; no matched leaderboard, SOTA, equal-compute or significance claim."
+    },
+    {
+      "pages": [
+        2,
+        6,
+        10
+      ],
+      "text": "Time-correlation VOC is not semantic completion accuracy; temporal MSE reference is not independent completion labels."
+    },
+    {
+      "pages": [
+        9,
+        10
+      ],
+      "text": "No demonstrated online localization/recovery/contact-state reasoning/causal diagnosis."
+    },
+    {
+      "pages": [
+        2,
+        10
+      ],
+      "text": "57 questions cluster in 15 sequences; ranking pairs also dependent; no repeat-call variance or uncertainty estimates."
+    },
+    {
+      "pages": [
+        2,
+        10
+      ],
+      "text": "External demos only establish reported trajectory disjointness, not environment/embodiment/pretraining independence."
+    },
+    {
+      "pages": [
+        10,
+        11
+      ],
+      "text": "Release should bind sources, manifests, split composition, frame identities/resolution, prompts/examples, requested and returned models/dates, output budgets, parsing/retry/missing-output rules and scorers."
+    }
+  ],
+  "story_proposal": [
+    {
+      "section": "Hero",
+      "copy": "Beyond the Score — What makes a useful robot critic?",
+      "media": "Real robot trajectory replay as visual context, with direct paper PDF link and preliminary/date badge"
+    },
+    {
+      "section": "Four ways to assess a robot",
+      "copy": "Progress, independent ranking, direct preference, subtask diagnosis are different interfaces.",
+      "media": "Four compact cards showing actual input/support"
+    },
+    {
+      "section": "Strong comparative judgment",
+      "copy": "Astra zero-shot: 93.6 VOC, 0.8166 Kendall, 92.4% preference within study.",
+      "media": "Three metric tabs, study data foreground and external literature explicitly separate"
+    },
+    {
+      "section": "A better trend can miss the finish",
+      "copy": "Bottle example: VOC rises while terminal estimate falls from 1.00 to 0.35.",
+      "media": "Actual verified bottle video plus fixed-prefix chart; do not simulate unseen predictions"
+    },
+    {
+      "section": "Fewer inversions, more ties",
+      "copy": "Reference ICL reduces inversions but loses ranking resolution.",
+      "media": "Weighted outcome interactive stacked bars"
+    },
+    {
+      "section": "Fewer alarms, more misses",
+      "copy": "RoboFail accuracy rises to 85.96%; failure recall falls to 82.35%.",
+      "media": "Confusion matrix condition switch and actual knob-grasp missed-failure case"
+    },
+    {
+      "section": "What ROUGE-L rewards",
+      "copy": "89.3% of the gain comes from the correct-success component.",
+      "media": "Stacked score decomposition, formula tooltip"
+    },
+    {
+      "section": "Evidence, limits, materials",
+      "copy": "Preliminary offline evidence; no causal or deployment claim.",
+      "media": "Full tables expandable by record, PDF, local source/provenance notes without secrets"
+    }
+  ],
+  "historical_additions": "Conversation mentions GPT-5.6 Sol and DeepSeek RoboFail follow-up runs; they are NOT in this PDF, whose RoboFail study table contains only Astra zero-shot and five-example. If independently verified in run files and used on website, label clearly as supplementary later evaluations, not results of report Tables 5/7."
+}
