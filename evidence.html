@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f8f7f3">
+  <meta name="description" content="Beyond the Score: an evidence-led look at GPT-6 Astra as a robot critic. Explore trajectory judgments, real robot videos, and the trade-off between fewer false alarms and more missed failures.">
+  <meta property="og:title" content="Beyond the Score · Simple AI">
+  <meta property="og:description" content="Early Evaluations of GPT-6 Astra as a Robot Critic">
+  <meta property="og:type" content="website">
+  <meta name="citation_title" content="Beyond the Score: Early Evaluations of GPT-6 Astra as a Robot Critic">
+  <meta name="citation_author" content="Simple AI">
+  <meta name="citation_publication_date" content="2026/09/23">
+  <title>Beyond the Score | Simple AI</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="data.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#overview">Skip to content</a>
+<header class="header">
+  <a class="brand" href="#top" aria-label="Simple AI — back to top">SIMPLE<span>·AI</span></a>
+  <a class="project-name" href="index.html">← Research blog</a>
+  <nav aria-label="Main navigation"><a href="#overview">Overview</a><a href="#results">Results</a><a href="#trajectories">Replay</a><a href="#diagnosis">RoboFail</a></nav>
+  <a class="button dark small" href="assets/Beyond-the-Score.pdf" target="_blank" rel="noopener">Paper <span aria-hidden="true">↗</span></a>
+</header>
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-mosaic" aria-hidden="true"><img src="assets/rbm/q0041-poster.jpg" alt=""><img src="assets/rbm/t098-poster.jpg" alt=""><img src="assets/rbm/t011-poster.jpg" alt=""><img src="assets/rbm/q0039-poster.jpg" alt=""></div>
+    <div class="hero-inner wrap">
+      <div class="hero-overline"><span><i class="dot"></i> SIMPLE AI · ROBOT EVALUATION</span><span>RESEARCH PREVIEW · SEPTEMBER 2026</span></div>
+      <div class="hero-heading"><h1 id="hero-title">Beyond<br>the <span>Score.</span></h1><p class="subtitle">Early Evaluations of GPT-6 Astra<br>as a Robot Critic</p></div>
+      <div class="hero-bottom"><p>A capable critic needs more than a high score. <br>We examine what it notices, what it misses, <br>and what the metrics actually reward.</p><div class="actions"><a class="button light" href="#trajectories">Explore the evidence <span>↓</span></a><a class="button outline" href="assets/Beyond-the-Score.pdf" target="_blank" rel="noopener">Read the report ↗</a></div></div>
+    </div>
+  </section>
+  <div class="metric-strip wrap" aria-label="Study zero-shot headline results">
+    <div><strong>93.6</strong><span>Progress VOC ×100</span><small>105 successful trajectories</small></div>
+    <div><strong>0.8166</strong><span>Independent ranking τ-a</span><small>567 trajectories · 41 groups</small></div>
+    <div><strong>92.4<em>%</em></strong><span>Pairwise preference</span><small>1,192 fixed pairs</small></div>
+    <div><strong>57</strong><span>RoboFail questions</span><small>15 trajectory groups</small></div>
+  </div>
+
+  <section id="overview" class="section wrap">
+    <div class="section-intro"><p class="eyebrow">01 / THE QUESTION</p><h2>What makes a<br>useful robot critic?</h2><p class="lead">Progress, preference, and failure diagnosis ask different questions. We evaluate each interface separately, then look beyond its aggregate score.</p></div>
+    <div class="interface-grid">
+      <article><span class="index">01</span><div class="mini-progress" aria-hidden="true">▁ ▂ ▄ ▃ ▇</div><h3>How far along?</h3><p>Estimate progress from the task and the observed video prefix.</p><span class="tag">PROGRESS · VOC</span></article>
+      <article><span class="index">02</span><div class="mini-order" aria-hidden="true">A <span>›</span> B <span>›</span> C</div><h3>Which score is higher?</h3><p>Score each trajectory independently; compare the resulting order.</p><span class="tag">RANKING · KENDALL τ-a</span></article>
+      <article><span class="index">03</span><div class="mini-order" aria-hidden="true"><b>A</b> / B</div><h3>Which execution is better?</h3><p>Observe two trajectories in the same request and choose one.</p><span class="tag">PREFERENCE · ACCURACY</span></article>
+      <article><span class="index">04</span><div class="mini-order" aria-hidden="true">Yes <span>/</span> No</div><h3>Did the subtask succeed?</h3><p>Read a keyframe montage, decide success, and explain a failure.</p><span class="tag">DIAGNOSIS · LABEL + TEXT</span></article>
+    </div>
+    <p class="caption">An exploratory offline study. Counts describe evaluation records, not independent robot trials. No policy training or closed-loop robot control is evaluated.</p>
+  </section>
+
+  <section id="results" class="section shaded">
+    <div class="wrap">
+      <div class="section-intro"><p class="eyebrow">02 / RBM EVALUATION</p><h2>Strong comparative judgment.<br>A closer look at progress.</h2><p class="lead">Among the three study zero-shot configurations, Astra has the highest reported point estimate on each metric. Its clearest separation from Sol is in independent trajectory ranking.</p></div>
+      <div class="results-panel">
+        <div class="panel-top"><span class="eyebrow">STUDY CONFIGURATIONS</span><div class="segmented" aria-label="Choose RBM metric"><button data-metric="voc" aria-pressed="true">Progress</button><button data-metric="rank" aria-pressed="false">Ranking</button><button data-metric="pref" aria-pressed="false">Preference</button></div></div>
+        <div class="chart-layout"><div><h3 id="metric-title">Progress VOC ×100</h3><div id="metric-bars" class="bar-chart"></div><div id="metric-axis" class="axis"></div></div><aside class="metric-context"><span class="eyebrow">READING THE METRIC</span><p id="metric-description"></p><strong id="metric-callout"></strong><p id="metric-note" class="caption"></p></aside></div>
+      </div>
+      <p class="caption">Report Tables 2–3. Descriptive point estimates; no equal-compute or statistical-significance claim. The study preference split composition is incompletely documented.</p>
+      <details class="data-details"><summary>Full RBM results &amp; literature context <span>+</span></summary><p>Published baselines are retained as separate records. Their sample identities, inputs, and scoring protocols are not matched to this study; this table is not a shared leaderboard.</p><div class="table-scroll" id="rbm-table"></div></details>
+    </div>
+  </section>
+
+  <section id="trajectories" class="section wrap">
+    <div class="section-intro"><p class="eyebrow">03 / WATCH THE EVIDENCE</p><h2>The same task.<br>Very different executions.</h2><p class="lead">Explore real robot observations alongside the critic’s saved progress estimates. A transfer can stall, an approach can be retried, and a score can disagree with a terminal label.</p></div>
+    <div class="case-buttons" aria-label="Choose trajectory"><button data-case="Q0041" aria-pressed="true">Cup · success</button><button data-case="Q0039" aria-pressed="false">Cup · partial</button><button data-case="Q0037" aria-pressed="false">Cup · wrong object</button><button data-case="T011" aria-pressed="false">Banana · retry</button><button data-case="T098" aria-pressed="false">Bottle · counterexample</button></div>
+    <div class="explorer">
+      <div class="replay-pane"><div class="panel-top"><span id="case-robot" class="eyebrow">xArm · Q0041</span><span class="tag" id="case-quality">REFERENCE: SUCCESSFUL</span></div><video id="trajectory-video" controls playsinline muted preload="metadata" poster="assets/rbm/q0041-poster.jpg" src="assets/rbm/q0041-replay.mp4" aria-label="Selected robot trajectory replay"></video><div class="replay-footer"><span>32 sampled frames · 4 fps</span><span>Illustrative playback speed</span></div></div>
+      <div class="assessment-pane"><p class="eyebrow">ASTRA LOW · SAVED EVALUATION</p><h3 id="case-title">The right object, placed and released</h3><p id="case-task"></p><div id="progress-chart" class="progress-chart"></div><div class="checkpoints" id="checkpoints" aria-label="Inspect evaluated observations"></div><div class="reason-box"><div><span class="eyebrow" id="reason-label">OBSERVATION</span><strong id="progress-value"></strong></div><p id="progress-reason"></p></div></div>
+    </div>
+    <p id="case-summary" class="case-summary"></p><p id="case-provenance" class="caption"></p>
+    <div class="insight-grid"><article><span class="eyebrow">THE BOTTLE COUNTEREXAMPLE · TABLE 4</span><h3>A better trend can<br>miss the finish.</h3><p>With a single training-trajectory example, time correlation rises while the final completion estimate falls. The public terminal label remains success.</p><button class="text-button" id="show-bottle">Inspect this case <span>↗</span></button></article><div class="bottle-stats"><div><span>Condition</span><span>VOC (unscaled)</span><span>Final estimate</span><span>Time-ref. MSE</span></div><div><strong>Zero-shot</strong><strong>0.9051</strong><strong>1.00</strong><strong>0.0407</strong></div><div><strong>Single-trajectory ICL</strong><strong class="teal">0.9536 ↑</strong><strong class="orange">0.35 ↓</strong><strong class="orange">0.1312 ↑</strong></div><p class="caption">Post-hoc example; not a frequency estimate. Completion is not independently visually adjudicated. MSE uses a time reference, not human completion percentages.</p></div></div>
+  </section>
+
+  <section class="section dark-section" id="ranking">
+    <div class="wrap split"><div><p class="eyebrow">04 / WHEN CONTEXT CHANGES THE CRITIC</p><h2>Fewer inversions.<br>More ties.</h2><p class="lead">Reference examples reduce incorrectly reversed orders, but more tied scores erase that gain. Ranking τ-a drops from 0.8166 to 0.7953.</p><p class="caption">Three randomly selected training references for ranking. Of 41 source–task groups: 8 improve, 10 decline, 23 are unchanged.</p></div><div class="ranking-viz"><div class="legend"><span><i class="swatch good"></i>Correct order</span><span><i class="swatch tie"></i>Tie</span><span><i class="swatch bad"></i>Inversion</span></div><div class="stack-label"><strong>Zero-shot</strong><span>τ-a 0.8166</span></div><div class="stack" role="img" aria-label="Zero-shot: correct order 86.44%, ties 8.78%, inversions 4.78%"><span class="good" style="width:86.44%">86.44%</span><span class="tie" style="width:8.78%"></span><span class="bad" style="width:4.78%"></span></div><p class="stack-note">Ties 8.78% · Inversions 4.78%</p><div class="stack-label"><strong>Three-reference ICL</strong><span>τ-a 0.7953</span></div><div class="stack" role="img" aria-label="ICL: correct order 83.21%, ties 13.11%, inversions 3.68%"><span class="good" style="width:83.21%">83.21%</span><span class="tie" style="width:13.11%"></span><span class="bad" style="width:3.68%"></span></div><p class="stack-note">Ties 13.11% · Inversions 3.68%</p><p class="caption">Weighted outcome percentages, not counts of independent pairs. Report Figure 4.</p></div></div>
+  </section>
+
+  <section id="diagnosis" class="section wrap">
+    <div class="section-intro"><p class="eyebrow">05 / ROBOFAIL · SUBTASK DIAGNOSIS</p><h2>Fewer false alarms.<br>More missed failures.</h2><p class="lead">Five external examples are associated with higher accuracy on the same 57 questions. They also shift the error balance: 16 more successful subtasks recognized, but 4 more failures missed.</p></div>
+    <div class="diagnosis-dashboard"><div class="confusion-panel"><div class="panel-top"><span class="eyebrow">REFERENCE × PREDICTION</span><div class="segmented" aria-label="Choose RoboFail condition"><button data-condition="0" aria-pressed="true">Zero-shot</button><button data-condition="1" aria-pressed="false">External 5-shot</button></div></div><div id="confusion"></div><p class="caption">Failure is the positive class. Reference: 23 successes, 34 failures.</p></div><div class="diagnosis-stats" id="diagnosis-stats"></div></div>
+    <p class="caption">Table 7. Offline answer classification, not robot execution success or timestamped alarms. Returned model identifiers differ across conditions; backend consistency is unconfirmed, so this is an observed difference rather than an isolated causal effect of ICL.</p>
+    <div class="rouge-layout"><div><p class="eyebrow">WHAT DOES THE EXPLANATION SCORE REWARD?</p><h3>89.3% of the gain comes<br>from recognizing success.</h3><p>The benchmark’s composite ROUGE-L rises from 0.185 to 0.499. Most of the increase is in the correct-success component; the score is not a percentage of correct failure explanations.</p><details><summary>How the composite score is computed</summary><p>Correct success → 1.<br>Correct failure → stemmed ROUGE-L F1 against the reference explanation.<br>Wrong label → 0.<br>Average across all 57 questions.</p><p>ROUGE-L measures lexical overlap. It does not verify a physical cause. The failure component also depends on which failures are detected.</p></details></div><div id="rouge-chart"></div></div>
+    <details class="data-details"><summary>RoboFail comparison table <span>+</span></summary><p>Astra uses 57 public AHA-adapted questions. The AHA paper’s exact question identity/count alignment is unverified, and demonstration identities are not matched. Literature rows provide context, not a matched replacement experiment.</p><div class="table-scroll" id="robofail-table"></div></details>
+  </section>
+
+  <section id="failure-cases" class="section shaded">
+    <div class="wrap"><div class="section-intro"><p class="eyebrow">06 / FAILURE CASES, SIDE BY SIDE</p><h2>A label can be right.<br>The reason can still differ.</h2><p class="lead">Compare the released reference with the actual model answers. The original episode provides visual context; the evaluated input was a keyframe montage.</p></div>
+      <div class="case-buttons" aria-label="Choose RoboFail case"><button data-failure="55" aria-pressed="true">Missed grasp · false negative</button><button data-failure="36" aria-pressed="false">Slicing · false alarm</button></div>
+      <div class="failure-layout"><div><div class="panel-top"><span id="failure-task" class="eyebrow">Grasp the stove knob</span><span id="failure-id" class="tag">CASE 55</span></div><video id="failure-video" playsinline controls preload="metadata" aria-label="Source robot episode"></video><p class="caption">Source video at its original speed. The model did not receive this continuous video.</p><div id="failure-keyframes" class="keyframe-strip"></div><p class="caption">Click an input observation to seek the video. Times are independently reconstructed frame positions, not failure intervals or model alarm times.</p></div><div id="failure-answers"></div></div>
+      <details class="data-details"><summary>Inspect the exact model input &amp; evidence boundary <span>+</span></summary><figure class="model-input-preview"><figcaption><strong>Original input image</strong><span>Scroll horizontally to inspect all frames · click to open full resolution</span></figcaption><div class="input-image-scroll" tabindex="0" role="region" aria-label="Original input montage; scroll horizontally to see every frame"><a id="input-link" target="_blank" rel="noopener"><img id="failure-input" loading="lazy" alt="Original full keyframe montage provided to the model"></a></div><p class="caption">White cells belong to the original input and represent future subtasks; they are not missing images.</p></figure><p class="eyebrow input-question-label">Question text</p><p id="failure-question"></p><p>Released AHA reference labels are preserved. Model descriptions are quotations, not independently verified physical causes. We matched input observations to the original video using pixel similarity and visual inspection. No human failure interval or online model alarm is available for these evaluated questions.</p><p>Both examples were selected after evaluation. The knob case is discussed in the report; the slicing case is an additional illustration from the same existing runs.</p></details>
+    </div>
+  </section>
+
+  <section id="scope" class="section wrap">
+    <div class="section-intro"><p class="eyebrow">07 / INTERPRETING THE EVIDENCE</p><h2>Keep the measurements<br>attached to their questions.</h2></div>
+    <div class="limitations"><article><span>01</span><h3>Correlation ≠ completion</h3><p>VOC describes a trend against time. High VOC can coexist with a wrong terminal estimate. Time-based MSE is not a human semantic-completion label.</p></article><article><span>02</span><h3>Accuracy ≠ failure recall</h3><p>A gain in overall accuracy can hide more missed failures. Report both error directions before discussing intervention quality.</p></article><article><span>03</span><h3>Offline evidence ≠ deployment</h3><p>There is no demonstrated online localization, causal diagnosis, recovery control, or improvement in robot learning in this report.</p></article></div>
+    <details class="data-details"><summary>Evaluation conditions &amp; distinct RoboFail adaptations <span>+</span></summary><div class="protocol-grid"><div><h3>Inputs and examples</h3><p>Progress: five observed-prefix positions; one same- or similar-task training trajectory with six stage scores for ICL. Ranking: eight test frames; three random high/middle/low training references. Direct preference: both trajectories in one request.</p><p>RoboFail: original montage and question. Five fixed external image–question–answer demonstrations are reported disjoint by test trajectory. This does not establish environment, embodiment, near-duplicate, or pretraining independence.</p></div><div><h3>What remains unresolved</h3><p>Questions cluster in 15 sequences, and ranking pairs are dependent. Repeated-call variation and confidence intervals are unavailable. Requested model names do not establish backend equivalence or equal token budgets.</p><p>Media replays and model outputs are drawn from saved evaluations. They introduce no new aggregate benchmark scores.</p></div></div><h3>Guardian and PRIMO are different evaluation supports</h3><p>Guardian uses 153 execution / 30 planning examples; PRIMO uses 100 Cosmos-curated examples. The report includes their published results separately. No Astra score is available on either adaptation. In the Guardian table, +GF denotes training on GuardianFail-36k.</p><div class="protocol-grid"><div class="table-scroll" id="guardian-table"></div><div class="table-scroll" id="primo-table"></div></div></details>
+  </section>
+
+  <section id="resources" class="section resources"><div class="wrap"><p class="eyebrow">REPORT &amp; MATERIALS</p><div class="resource-heading"><h2>Beyond the Score</h2><p>Early Evaluations of GPT-6 Astra as a Robot Critic<br>Simple AI · September 23, 2026 · Preliminary technical report</p></div><div class="resource-links"><a href="assets/Beyond-the-Score.pdf" target="_blank" rel="noopener"><span>Technical report</span><strong>Read the PDF ↗</strong></a><a href="data/report.json" download><span>Report tables &amp; definitions</span><strong>Download data ↓</strong></a><a href="data/rbm-cases.json" download><span>Trajectory media &amp; saved estimates</span><strong>Case data ↓</strong></a><a href="data/robofail-cases.json" download><span>RoboFail inputs &amp; model answers</span><strong>Case data ↓</strong></a></div><div class="citation-box"><div class="panel-top"><span class="eyebrow">BIBTEX</span><button id="copy-citation" class="text-button">Copy citation</button><span id="copy-status" role="status"></span></div><pre id="citation">@techreport{simpleai2026beyond,
+  title = {Beyond the Score: Early Evaluations of GPT-6 Astra
+           as a Robot Critic},
+  author = {{Simple AI}},
+  institution = {Simple AI},
+  year = {2026},
+  month = sep,
+  note = {Preliminary technical report, September 23}
+}</pre></div><p class="caption">Robot observations: RBM-EVAL-OOD and RoboFail / AHA. See the report’s references for original datasets and published baselines. Companion media is selected post hoc from the existing evaluation record.</p></div></section>
+</main>
+<footer class="wrap"><a class="brand" href="https://cloud.simpleai.tech/simple-world-lab/">SIMPLE<span>·AI</span></a><span>Beyond the Score · 2026</span><a href="#top">Back to top ↑</a></footer>
+<noscript><p class="no-script">Enable JavaScript for interactive charts and cases. The full results remain available in the linked PDF and JSON downloads.</p></noscript>
+</body>
+</html>

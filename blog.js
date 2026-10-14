@@ -1,0 +1,13 @@
+'use strict';
+const qs=s=>document.querySelector(s);
+const all=s=>[...document.querySelectorAll(s)];
+const diagnosis=[{accuracy:'64.91',recall:'94.12%',falseAlarms:18,misses:2,correct:37,matrix:[5,18,2,32]},{accuracy:'85.96',recall:'82.35%',falseAlarms:2,misses:6,correct:49,matrix:[21,2,6,28]}];
+function setCondition(index){const d=diagnosis[index];all('[data-condition]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.condition)===index)));qs('#accuracy').textContent=d.accuracy;qs('#recall').textContent=d.recall;qs('#false-alarms').textContent=d.falseAlarms;qs('#misses').textContent=d.misses;qs('#correct').textContent=d.correct+' / 57';all('[data-cell]').forEach((el,i)=>el.textContent=d.matrix[i]);}
+all('[data-condition]').forEach(b=>b.addEventListener('click',()=>setCondition(Number(b.dataset.condition))));
+all('[data-figure-tab]').forEach(b=>b.addEventListener('click',()=>{all('[data-figure-tab]').forEach(el=>el.setAttribute('aria-pressed',String(el===b)));all('[data-figure-panel]').forEach(el=>el.hidden=el.dataset.figurePanel!==b.dataset.figureTab);}));
+const modal=qs('#figure-modal');let lastFocus;
+all('[data-zoom]').forEach(button=>button.addEventListener('click',()=>{lastFocus=button;const img=button.querySelector('img');qs('#expanded-figure').src=img.src;qs('#expanded-figure').alt=img.alt;qs('#figure-description').textContent=img.alt;modal.showModal();}));
+qs('#close-figure').addEventListener('click',()=>modal.close());modal.addEventListener('click',e=>{if(e.target===modal){const r=modal.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)modal.close();}});modal.addEventListener('close',()=>lastFocus?.focus());
+function reading(){const total=document.documentElement.scrollHeight-innerHeight;qs('#reading-progress').style.width=(total>0?Math.min(100,scrollY/total*100):0)+'%';const sections=all('[data-toc]');let active=sections[0];for(const s of sections){if(s.getBoundingClientRect().top<=150)active=s;}all('.toc a[href^="#"]').forEach(a=>{const selected=a.hash==='#'+active?.id;a.classList.toggle('active',selected);if(selected)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current');});}
+let scheduled=false;addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{reading();scheduled=false;});}},{passive:true});addEventListener('resize',reading);addEventListener('load',reading);reading();
+all('video').forEach(v=>v.addEventListener('play',()=>all('video').filter(x=>x!==v).forEach(x=>x.pause())));
