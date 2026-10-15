@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Beyond the Score: Early Evaluations of GPT-6 Astra as a Robot Critic · Simple AI</title>
+<meta name="description" content="Offline evaluations of GPT-6 Astra as a robot critic: trajectory quality, progress estimation, failure diagnosis, context examples, and limitations.">
+<meta name="theme-color" content="#f8f7f3">
+<meta name="citation_author" content="Jinhao Zhang">
+<meta name="citation_author" content="Yuwei Zhang">
+<meta name="citation_author" content="Weitao Zhou">
+<meta property="og:title" content="Beyond the Score: Early Evaluations of GPT-6 Astra as a Robot Critic">
+<meta property="og:description" content="Offline evaluations of GPT-6 Astra as a robot critic: trajectory quality, progress estimation, failure diagnosis, context examples, and limitations.">
+<meta property="og:type" content="article">
+<link rel="alternate" hreflang="zh-CN" href="index.html">
+<link rel="alternate" hreflang="en" href="en.html">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="blog.css">
+<script src="blog.js" defer>
+</script>
+</head>
+<body>
+<a class="skip" href="#takeaways">Skip to article</a>
+<header class="header">
+<div class="wrap header-inner">
+<a class="brand" href="#top" aria-label="Simple AI">SIMPLE<span>·AI</span>
+</a>
+<span class="research">RESEARCH</span>
+<nav class="language-switch" aria-label="Language">
+<a data-language-link href="index.html" lang="zh-CN" hreflang="zh-CN" >中文</a>
+<a data-language-link href="en.html" lang="en" hreflang="en" aria-current="page">English</a>
+</nav>
+</div>
+</header>
+<div id="reading-progress" aria-hidden="true">
+</div>
+<main id="top">
+<div class="wrap article-shell">
+<aside class="toc" aria-label="Table of contents">
+<p>Contents</p>
+<nav>
+<a class="" href="#takeaways">Key takeaways</a>
+<a class="" href="#overview">Overview</a>
+<a class="" href="#setup">1. Study design</a>
+<a class="subsection" href="#trajectory-cases">1.1 Execution examples</a>
+<a class="" href="#results">2. Quality and preference</a>
+<a class="subsection" href="#literature">2.1 Prior work</a>
+<a class="" href="#context">3. Progress and context</a>
+<a class="subsection" href="#progress">3.1 Progress and endpoints</a>
+<a class="subsection" href="#ranking-context">3.2 Ties and inversions</a>
+<a class="" href="#failure">4. Subtask classification</a>
+<a class="" href="#explanations">5. Explanations and scores</a>
+<a class="subsection" href="#knob-case">5.1 Knob-grasping case</a>
+<a class="" href="#outlook">6. Discussion and limitations</a>
+<a class="subsection" href="#limitations">6.1 Limitations</a>
+<a class="subsection" href="#next-steps">6.2 Next steps</a>
+<a class="" href="#resources">Data and references</a>
+</nav>
+</aside>
+<article class="article">
+<header class="article-title">
+<p class="publication-meta">RESEARCH BLOG <span>·</span> <time datetime="2026-10-15">October 15, 2026</time>
+</p>
+<h1>
+<span class="title-name">Beyond the Score</span>
+<span class="title-description">Early Evaluations of GPT-6 Astra as a Robot Critic</span>
+</h1>
+<div class="author-block">
+<p class="authors">
+<span>Jinhao Zhang</span>, <span>Yuwei Zhang</span>, <span>Weitao Zhou</span>
+</p>
+<p class="organization">Simple AI</p>
+</div>
+<div class="publication-links" aria-label="Research materials">
+<a href="evidence.html#trajectories">Gallery ↗</a>
+<span class="unreleased">Code <small>(coming soon)</small>
+</span>
+<span class="unreleased">arXiv <small>(coming soon)</small>
+</span>
+</div>
+</header>
+<section id="takeaways" class="key-takeaways" data-toc>
+<h2>Key takeaways</h2>
+<ul>
+<li>
+<strong>Astra distinguishes execution quality without task-specific fine-tuning.</strong> Zero-shot ranking τa is 0.8166 and direct preference accuracy is 92.4%, the highest point estimates among the three general-purpose configurations tested here.</li>
+<li>
+<strong>Context examples have mixed effects.</strong> Progress VOC rises from 93.6 to 94.2, while ranking τa falls from 0.8166 to 0.7953. In a bottle-opening example, higher progress correlation also accompanies a worse endpoint estimate.</li>
+<li>
+<strong>Higher RoboFail accuracy comes with lower failure recall.</strong> Accuracy is 85.96% with five examples versus 64.91% zero-shot. False alarms fall from 18 to 2, but misses rise from 2 to 6. Backend consistency is unconfirmed, so the difference cannot be attributed solely to examples.</li>
+<li>
+<strong>Most of the composite explanation-score gain comes from success recognition.</strong> ROUGE-L rises from 0.185 to 0.499; about 89.3% of the gain comes from the correct-success term, rather than the failure-explanation term.</li>
+</ul>
+</section>
+<section id="overview" class="" data-toc>
+<h2>Overview</h2>
+<p class="">We study whether GPT-6 Astra can assess robot execution from visual observations. On RBM trajectory data and the AHA adaptation of RoboFail, we evaluate four interfaces: independent trajectory scoring, direct comparison of two trajectories, progress estimation, and subtask success classification with explanations. Tasks and observations are supplied through prompts, without fine-tuning for these evaluations.</p>
+<p class="">Astra obtains strong execution-quality scores in this evaluation. Further analysis shows that progress correlation, ranking discrimination, failure recall, and explanation quality do not always improve together. We present the results by interface and examine these differences through individual cases. All experiments are offline; we have not tested whether critic feedback improves policy learning or closed-loop execution.</p>
+</section>
+<section id="setup" class="" data-toc>
+<h2>1. Study design</h2>
+<p class="">A robot critic may compare trajectories, estimate progress, or check whether a subtask has finished. These uses require different judgments. We evaluate them separately rather than summarize all of them with one score.</p>
+<div class="table-scroll" role="region" aria-label="Table 1. Four evaluation interfaces. Counts are not numbers of independent robot trials." tabindex="0">
+<table>
+<caption>Table 1. Four evaluation interfaces. Counts are not numbers of independent robot trials.</caption>
+<thead>
+<tr>
+<th scope="col">Interface</th>
+<th scope="col">Model input</th>
+<th scope="col">Evaluation support</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Independent ranking</th>
+<td>Task text and eight frames from one trajectory</td>
+<td>567 trajectories; 41 source–task groups</td>
+</tr>
+<tr>
+<th scope="row">Direct preference</th>
+<td>Two trajectories in the same request</td>
+<td>1,192 fixed pairs</td>
+</tr>
+<tr>
+<th scope="row">Progress estimation</th>
+<td>Task text, current and preceding observations</td>
+<td>105 successful trajectories; five evaluation positions</td>
+</tr>
+<tr>
+<th scope="row">Subtask diagnosis</th>
+<td>Original keyframe montage and subtask question</td>
+<td>57 questions from 15 trajectory groups</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="">Progress and ranking use six sources from RBM-EVAL-OOD. The reference quality order is success above suboptimal above failure. Preference is evaluated separately on 1,192 fixed pairs, whose split composition is not fully documented in the available record. The 57 RoboFail questions include 23 reference-success and 34 reference-failure subtasks.</p>
+<h3 id="trajectory-cases" data-toc>1.1 Three executions of the same task</h3>
+<p class="">All three trajectories below share the instruction “Put blue cup in sink.” Q0041 places and releases the cup in the sink. For Q0039, the model describes the cup slipping during transfer and remaining outside the basin. Q0037 moves another object while the blue cup stays in place. The saved progress estimates reach 1.00, fall from 0.55 to 0.40, and return to 0, respectively.</p>
+<div class="demo">
+<figure>
+<video controls playsinline muted preload="none" poster="assets/rbm/q0041-poster.jpg" src="assets/rbm/q0041-replay.mp4" aria-label="Q0041 · Success">
+</video>
+<figcaption>Q0041 · Success</figcaption>
+</figure>
+<figure>
+<video controls playsinline muted preload="none" poster="assets/rbm/q0039-poster.jpg" src="assets/rbm/q0039-replay.mp4" aria-label="Q0039 · Suboptimal">
+</video>
+<figcaption>Q0039 · Suboptimal</figcaption>
+</figure>
+<figure>
+<video controls playsinline muted preload="none" poster="assets/rbm/q0037-poster.jpg" src="assets/rbm/q0037-replay.mp4" aria-label="Q0037 · Failure">
+</video>
+<figcaption>Q0037 · Failure</figcaption>
+</figure>
+</div>
+<p class="fine">Figure 1. Replays of stored sampled frames; playback time is not original execution time. These cases were selected post hoc and do not estimate error frequency. Initial progress is fixed at zero by protocol. Subsequent scores are model outputs, not human completion annotations; model explanations are not independently verified physical causes.</p>
+<a class="inline-link" href="evidence.html#trajectories">Inspect observations and original model responses ↗</a>
+</section>
+<section id="results" class="" data-toc>
+<h2>2. Trajectory quality and preference</h2>
+<p class="">For independent scoring, the model observes each trajectory separately and the scores determine a ranking. Astra obtains Kendall τa of <strong>0.8166</strong>. This metric measures agreement with reference quality order; inversions and predicted ties reduce the score. In direct preference, the model sees both trajectories and selects the better execution, reaching <strong>92.4%</strong> accuracy. Because the input interfaces differ, preference accuracy is not the accuracy of ordering independently computed scores.</p>
+<figure class="study-figure">
+<div class="study-chart">
+<h4>Independent ranking<small>Kendall τa ↑</small>
+</h4>
+<div class="study-row">
+<span>Astra · low</span>
+<div class="study-track" aria-hidden="true">
+<i class="primary" style="width:81.66%">
+</i>
+</div>
+<b>0.8166</b>
+</div>
+<div class="study-row">
+<span>GPT-5.6-sol · low</span>
+<div class="study-track" aria-hidden="true">
+<i class="" style="width:75.0%">
+</i>
+</div>
+<b>0.7500</b>
+</div>
+<div class="study-row">
+<span>DeepSeek-V4.1-Flash · max</span>
+<div class="study-track" aria-hidden="true">
+<i class="" style="width:53.0%">
+</i>
+</div>
+<b>0.5300</b>
+</div>
+<div class="chart-axis">
+<span>0</span>
+<span>1</span>
+</div>
+</div>
+<div class="study-chart">
+<h4>Direct preference<small>Accuracy % ↑</small>
+</h4>
+<div class="study-row">
+<span>Astra · low</span>
+<div class="study-track" aria-hidden="true">
+<i class="primary" style="width:92.4%">
+</i>
+</div>
+<b>92.4</b>
+</div>
+<div class="study-row">
+<span>GPT-5.6-sol · low</span>
+<div class="study-track" aria-hidden="true">
+<i class="" style="width:90.7%">
+</i>
+</div>
+<b>90.7</b>
+</div>
+<div class="study-row">
+<span>DeepSeek-V4.1-Flash · max</span>
+<div class="study-track" aria-hidden="true">
+<i class="" style="width:82.2%">
+</i>
+</div>
+<b>82.2</b>
+</div>
+<div class="chart-axis">
+<span>0</span>
+<span>100</span>
+</div>
+</div>
+<div class="study-chart">
+<h4>Progress correlation<small>VOC ×100 ↑</small>
+</h4>
+<div class="study-row">
+<span>Astra · low</span>
+<div class="study-track" aria-hidden="true">
+<i class="primary" style="width:93.6%">
+</i>
+</div>
+<b>93.6</b>
+</div>
+<div class="study-row">
+<span>GPT-5.6-sol · low</span>
+<div class="study-track" aria-hidden="true">
+<i class="" style="width:93.5%">
+</i>
+</div>
+<b>93.5</b>
+</div>
+<div class="study-row">
+<span>DeepSeek-V4.1-Flash · max</span>
+<div class="study-track" aria-hidden="true">
+<i class="" style="width:89.7%">
+</i>
+</div>
+<b>89.7</b>
+</div>
+<div class="chart-axis">
+<span>0</span>
+<span>100</span>
+</div>
+</div>
+<figcaption>Figure 2. The three zero-shot configurations evaluated in this study. All bars start at zero. These are point estimates without confidence intervals. Reasoning settings differ; this is not an equal-compute comparison.</figcaption>
+</figure>
+<p class="">Astra has the highest point estimate on all three metrics among the three zero-shot general-purpose configurations tested here. Relative to GPT-5.6-sol, the gaps are 0.0666 in ranking τa, 1.7 percentage points in preference accuracy, and 0.1 in progress VOC. The clearest numerical separation is in independent ranking. Repeat-call variance and confidence intervals are unavailable, so these differences are descriptive rather than significance claims.</p>
+<h3 id="literature" data-toc>2.1 Comparison with prior work</h3>
+<p class="">RynnValue-8B reports ranking τa of 0.675. The Robometer paper reports τa of 0.655, preference accuracy of 82.5%, and progress VOC of 94.8. Astra’s ranking and preference values are numerically higher, while its progress VOC is lower than this Robometer record.</p>
+<p class="">These literature values were not rerun on our samples. RynnValue describes a 976-trajectory OOD suite, whereas this study scores 567 trajectories. External preference evaluation uses 500 different-quality pairs per OOD source; our study uses 1,192 fixed pairs with incompletely documented composition. Sample, input, and aggregation differences prevent a matched-protocol superiority claim.</p>
+<details class="research-detail">
+<summary>Full results and literature charts</summary>
+<div class="table-scroll" role="region" aria-label="Full RBM results, retaining distinct sources and versions." tabindex="0">
+<table>
+<caption>Full RBM results, retaining distinct sources and versions.</caption>
+<thead>
+<tr>
+<th scope="col">Configuration</th>
+<th scope="col">Source</th>
+<th scope="col">VOC ×100 ↑</th>
+<th scope="col">τa ↑</th>
+<th scope="col">Preference % ↑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">GPT-6 Astra low (zero-shot)</th>
+<td>This study</td>
+<td>93.6</td>
+<td>0.8166</td>
+<td>92.4</td>
+</tr>
+<tr>
+<th scope="row">GPT-6 Astra low (ICL)</th>
+<td>This study</td>
+<td>94.2</td>
+<td>0.7953</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">GPT-5.6-sol low</th>
+<td>This study</td>
+<td>93.5</td>
+<td>0.7500</td>
+<td>90.7</td>
+</tr>
+<tr>
+<th scope="row">DpskV4.1-flash max</th>
+<td>This study</td>
+<td>89.7</td>
+<td>0.5300</td>
+<td>82.2</td>
+</tr>
+<tr>
+<th scope="row">RynnValue-8B</th>
+<td>RynnValue Table 2</td>
+<td>—</td>
+<td>0.6750</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">RynnValue-4B</th>
+<td>RynnValue Table 2</td>
+<td>—</td>
+<td>0.6700</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">Robometer / RBM-1M (paper v1)</th>
+<td>Robometer Tables XIII XVI XVII</td>
+<td>94.8</td>
+<td>0.6550</td>
+<td>82.5</td>
+</tr>
+<tr>
+<th scope="row">Robometer / RBM-1M (web)</th>
+<td>Robometer website detailed OOD tables</td>
+<td>94.0</td>
+<td>0.6430</td>
+<td>82.5</td>
+</tr>
+<tr>
+<th scope="row">Robometer / RoboReward data</th>
+<td>Robometer paper</td>
+<td>92.7</td>
+<td>0.5520</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">RoboReward-4B</th>
+<td>Robometer paper</td>
+<td>87.9</td>
+<td>0.5020</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">RoboReward-8B</th>
+<td>Robometer paper</td>
+<td>88.2</td>
+<td>0.4650</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">RoboDopamine-8B (web)</th>
+<td>Robometer website</td>
+<td>79.6</td>
+<td>0.4530</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">TOPReward / Qwen3-VL-8B</th>
+<td>Robometer website</td>
+<td>39.7</td>
+<td>0.1280</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">GVL / GPT-5-mini</th>
+<td>Robometer paper</td>
+<td>26.2</td>
+<td>0.1990</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">VLAC-8B</th>
+<td>Robometer paper</td>
+<td>37.5</td>
+<td>0.0490</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">VLAC-2B</th>
+<td>Robometer paper</td>
+<td>—</td>
+<td>0.0770</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">ReWiND / RBM-1M</th>
+<td>Robometer paper</td>
+<td>50.8</td>
+<td>0.0140</td>
+<td>—</td>
+</tr>
+<tr>
+<th scope="row">RL-VLM-F / GPT-5-mini</th>
+<td>Robometer paper</td>
+<td>—</td>
+<td>—</td>
+<td>55.5</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="">The Robometer paper and website report VOC of 94.8 / 94.0 and τa of 0.655 / 0.643, respectively; both versions are retained. RBM-1M and RoboReward data in configuration names refer to training data. Missing values are not imputed. ICL is neither counted as an additional model nor selectively combined with zero-shot results.</p>
+<figure class="figure">
+<button type="button" data-zoom aria-label="Enlarge: Full independent-ranking results">
+<img loading="lazy" src="assets/figures/01_ranking.png" alt="Full independent-ranking results">
+</button>
+<figcaption>Original source chart; cross-paper values are not matched-protocol rankings.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+<figure class="figure">
+<button type="button" data-zoom aria-label="Enlarge: Full direct-preference results">
+<img loading="lazy" src="assets/figures/02_preference.png" alt="Full direct-preference results">
+</button>
+<figcaption>Original source chart; cross-paper values are not matched-protocol rankings.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+<figure class="figure">
+<button type="button" data-zoom aria-label="Enlarge: Full progress-correlation results">
+<img loading="lazy" src="assets/figures/03_progress.png" alt="Full progress-correlation results">
+</button>
+<figcaption>Original source chart; cross-paper values are not matched-protocol rankings.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+</details>
+</section>
+<section id="context" class="" data-toc>
+<h2>3. Progress estimation and context examples</h2>
+<p class="">We also test demonstrations supplied in the request. In-context learning (ICL) does not update model parameters, and the example construction differs by interface. Progress uses one same- or similar-task training trajectory with six stage scores. Ranking uses three randomly selected high-, middle-, and low-score training trajectories, without requiring a task match. The middle reference score is not the test set’s suboptimal label. These are not equal-context comparisons, and no ICL preference result is reported.</p>
+<h3 id="progress" data-toc>3.1 Progress correlation and endpoint estimates</h3>
+<p class="">Across 105 successful trajectories, zero-shot Astra obtains VOC of 93.6. Predictions use only current and preceding frames and are compared with a time reference. VOC is reported on a ×100 scale and measures progress–time correlation, not completion accuracy. A task can remain in preparation for a long period before a late state change; semantic progress need not increase uniformly with time.</p>
+<p class="">With single-trajectory ICL, aggregate VOC rises to 94.2 and time-reference MSE falls from 0.0402 to 0.0390. Per-trajectory changes are mixed: VOC improves on 58 trajectories, declines on 35, and is unchanged on 12. In the reported banana-transfer task, 18 of 19 trajectories decline and one is unchanged. Of the 58 trajectories with higher VOC, 11 have worse MSE.</p>
+<div class="feature-case">
+<figure>
+<video controls playsinline muted preload="none" poster="assets/rbm/t098-poster.jpg" src="assets/rbm/t098-replay.mp4" aria-label="T098 · Open the bottle">
+</video>
+<figcaption>T098 · Open the bottle</figcaption>
+</figure>
+<div>
+<p class="">The public terminal label for bottle-opening case T098 is success. Zero-shot gives a terminal score of 1.00, while ICL gives 0.35. ICL has higher VOC, but its endpoint score is farther from the public success label and its time-reference MSE is about 3.22 times larger.</p>
+</div>
+</div>
+<div class="table-scroll" role="region" aria-label="Figure 3 / Table 2. Two evaluations of the bottle-opening case." tabindex="0">
+<table>
+<caption>Figure 3 / Table 2. Two evaluations of the bottle-opening case.</caption>
+<thead>
+<tr>
+<th scope="col">Condition</th>
+<th scope="col">Terminal score</th>
+<th scope="col">VOC (unscaled) ↑</th>
+<th scope="col">MSE ↓</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Zero-shot</th>
+<td>1.00</td>
+<td>0.9051</td>
+<td>0.0407</td>
+</tr>
+<tr>
+<th scope="row">Single-trajectory ICL</th>
+<td>0.35</td>
+<td>0.9536</td>
+<td>0.1312</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="fine">This post-hoc example illustrates a disagreement between metrics; it does not estimate how often that disagreement occurs. We retain the public success label without independently adjudicating visual completion. MSE also uses the time reference, not human semantic-completion annotations.</p>
+<h3 id="ranking-context" data-toc>3.2 Ties and inversions in ranking</h3>
+<p class="">With three reference trajectories, τa falls from 0.8166 to 0.7953. Of 41 source–task groups, eight improve, ten decline, and 23 remain unchanged. Under score-consistent pair weighting, inversions fall from 4.78% to 3.68%, but ties rise from 8.78% to 13.11% and correct strict orders fall from 86.44% to 83.21%.</p>
+<figure class="study-figure">
+<div class="stack-key">
+<span>
+<i>
+</i>Correct order</span>
+<span>
+<i>
+</i>Tie</span>
+<span>
+<i>
+</i>Inversion</span>
+</div>
+<div class="stack-heading">
+<strong>Zero-shot</strong>
+<span>τa 0.8166</span>
+</div>
+<div class="outcome-stack" role="img" aria-label="Correct order 86.44% · Tie 8.78% · Inversion 4.78%">
+<span style="width:86.44%">
+</span>
+<span style="width:8.78%">
+</span>
+<span style="width:4.78%">
+</span>
+</div>
+<p class="stack-values">Correct order 86.44% · Tie 8.78% · Inversion 4.78%</p>
+<div class="stack-heading">
+<strong>Three-reference ICL</strong>
+<span>τa 0.7953</span>
+</div>
+<div class="outcome-stack" role="img" aria-label="Correct order 83.21% · Tie 13.11% · Inversion 3.68%">
+<span style="width:83.21%">
+</span>
+<span style="width:13.11%">
+</span>
+<span style="width:3.68%">
+</span>
+</div>
+<p class="stack-values">Correct order 83.21% · Tie 13.11% · Inversion 3.68%</p>
+<figcaption>Figure 4. Weighted pair outcomes consistent with the reported scores, not unweighted counts of independent pairs. τa equals the correct-order weight minus the inversion weight.</figcaption>
+</figure>
+<p class="">Fewer inversions therefore do not produce a better ranking. More ties leave executions of different quality indistinguishable and offset the reduction in inversions. The decomposition explains the score change, but does not identify the mechanism by which examples affect judgment.</p>
+</section>
+<section id="failure" class="" data-toc>
+<h2>4. Subtask success and failure</h2>
+<p class="">RoboFail asks the model to classify subtask success from a keyframe montage and explain failures. Zero-shot detects 32 of 34 failures, giving 94.12% failure recall. It also misclassifies 18 of 23 successes as failures, yielding overall accuracy of 37 / 57, or 64.91%.</p>
+<p class="">With five external image–question–answer examples, the model answers 49 / 57 correctly, or 85.96%. Correct-success judgments rise from 5 to 21, while correct-failure judgments fall from 32 to 28. The net gain of 12 correct answers consists of 16 additional successes recognized and four fewer failures detected.</p>
+<figure class="diagnosis">
+<div class="diagnosis-header">
+<span>ROBOFAIL · 57 questions</span>
+<div class="switch" role="group" aria-label="Evaluation condition">
+<button type="button" data-condition="0" aria-pressed="true">Zero-shot</button>
+<button type="button" data-condition="1" aria-pressed="false">Five-example ICL</button>
+</div>
+</div>
+    <div class="diagnosis-body" aria-live="polite" aria-atomic="true">
+<div class="accuracy">
+<b>
+<span id="accuracy">64.91</span>
+<small>%</small>
+</b>
+<span>Overall accuracy</span>
+<div class="diag-numbers">
+<div>Failure recall<strong id="recall">94.12%</strong>
+</div>
+<div>Correct answers<strong id="correct">37 / 57</strong>
+</div>
+<div>False alarms<strong id="false-alarms">18</strong>
+</div>
+<div>Misses<strong id="misses">2</strong>
+</div>
+</div>
+</div>
+    <div class="matrix" role="group" aria-label="Confusion matrix">
+<span>
+</span>
+<span class="label">Predicted success</span>
+<span class="label">Predicted failure</span>
+<span class="label">Reference success</span>
+<div class="cell">
+<b data-cell>5</b>Correct success</div>
+<div class="cell error">
+<b data-cell>18</b>False alarm</div>
+<span class="label">Reference failure</span>
+<div class="cell error">
+<b data-cell>2</b>Miss</div>
+<div class="cell">
+<b data-cell>32</b>Correct failure</div>
+</div>
+</div>
+    <figcaption>Figure 5. Classification on the same 57 questions, treating failure as positive. A false alarm is a reference success predicted as failure; a miss is a reference failure predicted as success. This is offline classification, not a timestamped online alarm.</figcaption>
+</figure>
+<p class="">The false-alarm rate on successful subtasks falls from 78.26% to 8.70%, while the miss rate on failures rises from 5.88% to 17.65%. The five-example condition recognizes success more often, but also misses more failures. The practical choice depends on the costs of unnecessary intervention and missed failures, which are not measured here.</p>
+<p class="method-note">Two limitations apply. The five demonstrations are reported as disjoint from test trajectories, which does not establish environment, embodiment, near-duplicate, or pretraining independence. Also, returned model identifiers differ despite the same requested model name and low reasoning setting. Backend snapshot consistency is unconfirmed, so the observed difference does not isolate a causal effect of ICL.</p>
+<details class="research-detail">
+<summary>Full results and distinct RoboFail adaptations</summary>
+<div class="table-scroll" role="region" aria-label="This study and published AHA records; exact question alignment is unverified." tabindex="0">
+<table>
+<caption>This study and published AHA records; exact question alignment is unverified.</caption>
+<thead>
+<tr>
+<th scope="col">Configuration</th>
+<th scope="col">Source</th>
+<th scope="col">Accuracy % ↑</th>
+<th scope="col">ROUGE-L ↑</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Astra / zero-shot</th>
+<td>This study</td>
+<td>64.91</td>
+<td>0.185</td>
+</tr>
+<tr>
+<th scope="row">Astra / 5 examples</th>
+<td>This study</td>
+<td>85.96</td>
+<td>0.499</td>
+</tr>
+<tr>
+<th scope="row">LLaVA-v1.5-13B</th>
+<td>AHA Tables 3/4</td>
+<td>0.00</td>
+<td>0.000</td>
+</tr>
+<tr>
+<th scope="row">LLaVA-NeXT-34B</th>
+<td>AHA Tables 3/4</td>
+<td>1.70</td>
+<td>0.018</td>
+</tr>
+<tr>
+<th scope="row">Qwen-VL</th>
+<td>AHA Tables 3/4</td>
+<td>0.00</td>
+<td>0.000</td>
+</tr>
+<tr>
+<th scope="row">Gemini-1.5 Flash</th>
+<td>AHA Tables 3/4</td>
+<td>0.00</td>
+<td>0.000</td>
+</tr>
+<tr>
+<th scope="row">GPT-4o</th>
+<td>AHA Tables 3/4</td>
+<td>55.40</td>
+<td>0.114</td>
+</tr>
+<tr>
+<th scope="row">GPT-4o / 5-shot</th>
+<td>AHA Tables 3/4</td>
+<td>57.10</td>
+<td>0.236</td>
+</tr>
+<tr>
+<th scope="row">AHA-7B</th>
+<td>AHA Tables 3/4</td>
+<td>62.50</td>
+<td>0.204</td>
+</tr>
+<tr>
+<th scope="row">AHA-13B / Llama-2</th>
+<td>AHA Tables 3/4</td>
+<td>64.30</td>
+<td>0.280</td>
+</tr>
+<tr>
+<th scope="row">AHA-13B / Vicuna</th>
+<td>AHA Tables 3/4</td>
+<td>66.10</td>
+<td>0.290</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="">External results were not rerun or independently rescored on our 57 questions. The Vicuna and Llama-2 variants of AHA-13B remain separate. Published zero scores are retained without interpreting them as intrinsic inability.</p>
+<figure class="figure">
+<button type="button" data-zoom aria-label="Enlarge: Full subtask classification results">
+<img loading="lazy" src="assets/figures/04_robofail_icl.png" alt="Full subtask classification results">
+</button>
+<figcaption>Study and literature values are separated, not ranked on a common sample.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+<figure class="figure">
+<button type="button" data-zoom aria-label="Enlarge: Full composite ROUGE-L results">
+<img loading="lazy" src="assets/figures/05_robofail_icl.png" alt="Full composite ROUGE-L results">
+</button>
+<figcaption>The composite includes a classification term; see the definition in the next section.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+<p class="">Guardian uses 153 execution and 30 planning examples; PRIMO uses 100 Cosmos-curated examples. These supports differ from ours, and no Astra result is available on either. The literature records below remain separate from our 85.96% result.</p>
+<div class="table-scroll" role="region" aria-label="Guardian v4, Tables 1/2. +GF denotes training on GuardianFail-36k." tabindex="0">
+<table>
+<caption>Guardian v4, Tables 1/2. +GF denotes training on GuardianFail-36k.</caption>
+<thead>
+<tr>
+<th scope="col">Configuration</th>
+<th scope="col">Execution accuracy %</th>
+<th scope="col">Planning accuracy %</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">GPT-4o</th>
+<td>80</td>
+<td>67</td>
+</tr>
+<tr>
+<th scope="row">GPT-4o + Sentinel</th>
+<td>80</td>
+<td>63</td>
+</tr>
+<tr>
+<th scope="row">RoboFAC-7B</th>
+<td>25</td>
+<td>5</td>
+</tr>
+<tr>
+<th scope="row">I-Fail-Sense-3B</th>
+<td>43</td>
+<td>67</td>
+</tr>
+<tr>
+<th scope="row">Cosmos-Reason2-8B</th>
+<td>78</td>
+<td>53</td>
+</tr>
+<tr>
+<th scope="row">CLIP+MLP + GF</th>
+<td>42</td>
+<td>43</td>
+</tr>
+<tr>
+<th scope="row">I-Fail-Sense-3B + GF</th>
+<td>76</td>
+<td>52</td>
+</tr>
+<tr>
+<th scope="row">Cosmos-Reason2-8B + GF</th>
+<td>82</td>
+<td>70</td>
+</tr>
+<tr>
+<th scope="row">Guardian-8B + GF</th>
+<td>86</td>
+<td>70</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="table-scroll" role="region" aria-label="PRIMO, Table 3 / Appendix A.3." tabindex="0">
+<table>
+<caption>PRIMO, Table 3 / Appendix A.3.</caption>
+<thead>
+<tr>
+<th scope="col">Configuration</th>
+<th scope="col">Accuracy %</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Gemini 2.0 Flash</th>
+<td>67</td>
+</tr>
+<tr>
+<th scope="row">GPT-4o</th>
+<td>63</td>
+</tr>
+<tr>
+<th scope="row">OpenAI o1</th>
+<td>61</td>
+</tr>
+<tr>
+<th scope="row">Claude-haiku-4.5</th>
+<td>59</td>
+</tr>
+<tr>
+<th scope="row">Qwen2.5-VL-7B</th>
+<td>57.6</td>
+</tr>
+<tr>
+<th scope="row">Nemotron-H-56B</th>
+<td>64</td>
+</tr>
+<tr>
+<th scope="row">Cosmos-Reason1-7B</th>
+<td>60</td>
+</tr>
+<tr>
+<th scope="row">Cosmos-Reason1-56B</th>
+<td>66.2</td>
+</tr>
+<tr>
+<th scope="row">PRIMO (SFT)</th>
+<td>51</td>
+</tr>
+<tr>
+<th scope="row">PRIMO (RL)</th>
+<td>63</td>
+</tr>
+<tr>
+<th scope="row">PRIMO R1</th>
+<td>67</td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+<section id="explanations" class="" data-toc>
+<h2>5. Failure explanations and composite scores</h2>
+<p class="">Composite ROUGE-L rises from 0.185 to 0.499 in the five-example condition. This metric does not measure failure explanations alone. Under the AHA rules, a correct success answer receives 1; a correct failure receives stemmed ROUGE-L F1 against the reference explanation; and a label disagreement receives 0. Scores are summed and divided by 57. Evaluation uses the original English answers, not the Chinese paraphrases in this article.</p>
+<div class="formula" role="math" aria-label="Composite score equals correct successes plus summed explanation scores for correctly detected failures, divided by 57">R = (correct successes + summed explanation scores for correct failures) / 57</div>
+<figure class="study-figure">
+<div class="stack-key rouge-key">
+<span>
+<i>
+</i>Correct-success term</span>
+<span>
+<i>
+</i>Failure-explanation term</span>
+</div>
+<div class="stack-heading">
+<strong>Zero-shot</strong>
+<span>Composite score 0.185</span>
+</div>
+<div class="rouge-stack" role="img" aria-label="Zero-shot: 0.0877 + 0.0969">
+<span style="width:15.945454545454544%">0.0877</span>
+<span style="width:17.618181818181817%">0.0969</span>
+</div>
+<div class="stack-heading">
+<strong>External five-example</strong>
+<span>Composite score 0.499</span>
+</div>
+<div class="rouge-stack" role="img" aria-label="External five-example: 0.3684 + 0.1305">
+<span style="width:66.98181818181817%">0.3684</span>
+<span style="width:23.727272727272727%">0.1305</span>
+</div>
+<div class="chart-axis full">
+<span>0</span>
+<span>0.55</span>
+</div>
+<figcaption>Figure 6. Components of composite ROUGE-L, both divided by 57. Both bars use a 0–0.55 scale. Components and totals are rounded separately and may differ in the last decimal.</figcaption>
+</figure>
+<p class="">The correct-success term rises from 0.0877 to 0.3684. Its increase, 16 / 57 ≈ 0.2807, accounts for about 89.3% of the reported total gain of 0.3144. The failure-explanation term rises from 0.0969 to 0.1305, accounting for the remaining 10.7%. A score of 0.499 therefore does not mean that 49.9% of failure explanations are correct. Most of the gain comes from recognizing success.</p>
+<p class="">The explanation term also depends on which failures are detected and on lexical overlap with reference text. It does not independently distinguish a correct paraphrase from a similarly worded but incorrect diagnosis. Assessing the stated cause requires additional semantic review and physical evidence.</p>
+<h3 id="knob-case" data-toc>5.1 The knob-grasping case</h3>
+<figure class="figure">
+<button type="button" data-zoom aria-label="Enlarge: Original model-input montage for the knob-grasping subtask">
+<img loading="lazy" src="assets/robofail/case-055-input.jpg" alt="Original model-input montage for the knob-grasping subtask">
+</button>
+<figcaption>Figure 7. Original input for RoboFail case 55. White cells represent future subtasks. Open the image to inspect it at full size.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+<div class="table-scroll" role="region" aria-label="Table 3. Paraphrases of saved responses; original wording is available on the case page." tabindex="0">
+<table>
+<caption>Table 3. Paraphrases of saved responses; original wording is available on the case page.</caption>
+<thead>
+<tr>
+<th scope="col">Source</th>
+<th scope="col">Judgment and explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Reference</th>
+<td>Failure: the gripper did not close.</td>
+</tr>
+<tr>
+<th scope="row">Zero-shot</th>
+<td>Predicts failure, but describes an incorrect grasp location and no secure grasp.</td>
+</tr>
+<tr>
+<th scope="row">Five-example</th>
+<td>Predicts that the robot successfully grasped the knob.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="">The zero-shot label agrees with the reference, but its explanation does not identify the gripper-closure issue in the reference answer. The five-example condition predicts success for the same failed subtask. This case illustrates why labels and explanations need separate review; it neither estimates aggregate error frequency nor verifies the physical cause stated by either response.</p>
+<a class="inline-link" href="evidence.html#failure-cases">View keyframes, original responses, and source video ↗</a>
+</section>
+<section id="outlook" class="" data-toc>
+<h2>6. Discussion and limitations</h2>
+<p class="">These results support further study of Astra for offline robot assessment: it distinguishes execution quality, tracks progress, and detects many failures in the evaluated samples. The effects of examples nevertheless differ across metrics. Progress evaluation should include endpoint judgments; ranking should include ties; classification should report false alarms and misses separately; and explanations need validation beyond lexical overlap.</p>
+<h3 id="limitations" data-toc>6.1 Limitations</h3>
+<p class="">
+<strong>Scope.</strong> No policy is trained or controlled using the critic. We do not measure reinforcement-learning sample efficiency, online failure localization, recovery, or closed-loop success. Offline scores do not establish reliable contact-state reasoning, causal diagnosis, or reward-model deployment safety.</p>
+<p class="">
+<strong>Statistics and experimental control.</strong> The 57 RoboFail questions share 15 trajectory groups, and ranking pairs may share trajectories and tasks. Repeat-call variation and sampling uncertainty are not quantified, so small differences are not established improvements. RoboFail backend differences and example-selection effects also require separate control.</p>
+<p class="">
+<strong>Labels and cases.</strong> Qualitative cases were selected post hoc and do not estimate the prevalence of failure types. Label ambiguity, limited visual evidence, and model error can all affect outcomes. Without independent blind review, model rationales do not establish that a reference label is wrong. We retain the released labels.</p>
+<details class="research-detail">
+<summary>Reproducibility status</summary>
+<p class="">The available materials provide evaluation counts, demonstration constructions, aggregates, and selected cases. Full independent reproduction still requires source and sample manifests, preference split composition, input-frame identities and resolution, complete prompts and demonstration identities, requested and returned model versions, run dates, output budgets and sampling settings, and parsing, refusal, retry, and missing-output rules.</p>
+<p class="">Scorer versions, aggregation weights, tie conventions, and per-sample predictions are also needed for score audits and uncertainty estimates that preserve trajectory or source–task dependence. Completing the release would not itself resolve backend or example-selection confounds; missing materials are also not evidence that the underlying experiments are invalid.</p>
+</details>
+<h3 id="next-steps" data-toc>6.2 Next validation steps</h3>
+<p class="">The next step is to repeat comparisons under a confirmed common model snapshot with fixed inputs and demonstration-selection rules. Independent annotation of completion and failure explanations should then cover occluded, ambiguous, and low-observability cases. Finally, feedback should be tested with a fixed initial policy, algorithm, and interaction budget, using a success measure independent of the critic. That experiment should report feedback cost and check for reward exploitation.</p>
+</section>
+<section id="resources" class="" data-toc>
+<h2>Data and references</h2>
+<ul class="resource-links">
+<li>
+<a href="evidence.html#trajectories" >Interactive cases and original responses ↗</a>
+</li>
+<li>
+<a href="data/report.json" download>Result tables and metric definitions ↓</a>
+</li>
+<li>
+<a href="data/rbm-cases.json" download>Trajectory case data ↓</a>
+</li>
+<li>
+<a href="data/robofail-cases.json" download>RoboFail case data ↓</a>
+</li>
+</ul>
+<ol class="references">
+<li>
+<a href="https://arxiv.org/abs/2603.02115" target="_blank" rel="noopener">Robometer</a>. Paper v1, Tables XIII, XVI, XVII.</li>
+<li>
+<a href="https://robometer.github.io/" target="_blank" rel="noopener">RBM-EVAL-OOD</a>. Detailed website OOD tables, retained separately from the paper.</li>
+<li>
+<a href="https://arxiv.org/abs/2608.09853" target="_blank" rel="noopener">RynnValue</a>. Table 2, §4.2.</li>
+<li>
+<a href="https://aha-vlm.github.io/" target="_blank" rel="noopener">AHA</a>. Tables 3/4; recorded scoring-code revision: <code>0d39c0591566ddaf997be5822f3dead8e08501aa</code>.</li>
+<li>
+<a href="https://arxiv.org/html/2512.01946v4" target="_blank" rel="noopener">Guardian</a>. v4, Tables 1/2.</li>
+<li>
+<a href="https://arxiv.org/html/2603.15600" target="_blank" rel="noopener">PRIMO</a>. Table 3, Appendix A.3.</li>
+</ol>
+<p class="fine">The full RBM table also includes GVL, VLAC, RoboReward, ReWiND, RL-VLM-F, TOPReward, and Robo-Dopamine. Their numbers come from the identified Robometer paper or website records; this does not imply that each method’s original paper evaluated RBM.</p>
+<details class="research-detail">
+<summary>Additional method references</summary>
+<ul class="references">
+<li>
+<a href="https://arxiv.org/abs/2509.15937" target="_blank" rel="noopener">VLAC</a>
+</li>
+<li>
+<a href="https://arxiv.org/abs/2601.00675" target="_blank" rel="noopener">RoboReward</a>
+</li>
+<li>
+<a href="https://arxiv.org/abs/2505.10911" target="_blank" rel="noopener">ReWiND</a>
+</li>
+<li>
+<a href="https://arxiv.org/abs/2402.03681" target="_blank" rel="noopener">RL-VLM-F</a>
+</li>
+<li>
+<a href="https://arxiv.org/abs/2602.19313" target="_blank" rel="noopener">TOPReward</a>
+</li>
+<li>
+<a href="https://arxiv.org/abs/2512.23703" target="_blank" rel="noopener">Robo-Dopamine</a>
+</li>
+<li>GVL: Vision Language Models Are In-Context Value Learners. ICLR, 2025.</li>
+</ul>
+</details>
+<p class="fine">Experimental and literature values follow the verified September 23, 2026 record, incorporating the October 14 Chinese draft and existing cases. This webpage revision adds no new aggregate experiments. Literature values are a dated snapshot, not a live leaderboard.</p>
+</section>
+</article>
+</div>
+</main>
+<footer class="footer wrap">
+<a class="brand" href="#top">SIMPLE<span>·AI</span>
+</a>
+<span>Beyond the Score · 2026</span>
+<a href="#top">Back to top ↑</a>
+</footer>
+<dialog id="figure-modal" aria-label="Expanded figure">
+<button id="close-figure" type="button" aria-label="Close figure">×</button>
+<img id="expanded-figure" alt="">
+<p id="figure-description">
+</p>
+</dialog>
+</body>
+</html>
