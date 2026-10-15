@@ -27,7 +27,7 @@
 </a>
 <span class="research">RESEARCH</span>
 <nav class="language-switch" aria-label="Language">
-<a data-language-link href="index.html" lang="zh-CN" hreflang="zh-CN" >中文</a>
+<a data-language-link href="index.html" lang="zh-CN" hreflang="zh-CN">中文</a>
 <a data-language-link href="en.html" lang="en" hreflang="en" aria-current="page">English</a>
 </nav>
 </div>
@@ -47,19 +47,17 @@
 <a class="subsection" href="#metrics">1.3 Metric definitions</a>
 <a class="subsection" href="#comparison-protocol">1.4 Comparators</a>
 <a class="" href="#results">2. Quality and preference</a>
-<a class="subsection" href="#literature">2.1 Prior work</a>
-<a class="subsection" href="#trajectory-cases">2.2 Execution examples</a>
-<a class="" href="#context">3. Progress and context</a>
-<a class="subsection" href="#progress">3.1 Progress and endpoints</a>
-<a class="subsection" href="#progress-retry">3.2 Progress regression</a>
-<a class="subsection" href="#ranking-context">3.3 Ties and inversions</a>
-<a class="" href="#failure">4. Subtask classification</a>
-<a class="subsection" href="#classification-case">4.1 Persistent false alarm</a>
-<a class="" href="#explanations">5. Explanations and scores</a>
-<a class="subsection" href="#knob-case">5.1 Knob-grasping case</a>
-<a class="" href="#outlook">6. Discussion and limitations</a>
-<a class="subsection" href="#limitations">6.1 Limitations</a>
-<a class="subsection" href="#next-steps">6.2 Reinforcement learning</a>
+<a class="subsection" href="#ranking-results">2.1 Trajectory ranking</a>
+<a class="subsection" href="#preference-results">2.2 Direct preference</a>
+<a class="subsection" href="#literature">2.3 Prior work</a>
+<a class="" href="#progress-results">3. Task progress estimation</a>
+<a class="" href="#progress-icl">4. Effects of in-context examples (ICL)</a>
+<a class="" href="#failure">5. Subtask classification</a>
+<a class="subsection" href="#robofail-cases">Case Study · Labels and reasons</a>
+<a class="" href="#explanations">6. Explanations and scores</a>
+<a class="" href="#outlook">7. Discussion and limitations</a>
+<a class="subsection" href="#limitations">7.1 Limitations</a>
+<a class="subsection" href="#next-steps">7.2 Reinforcement learning</a>
 <a class="" href="#resources">Data and references</a>
 </nav>
 </aside>
@@ -113,7 +111,7 @@
 <p class="">
 <strong>RoboFail: subtask outcomes and explanations.</strong> We use 57 image–question examples from the AHA release, grouped into 15 operation sequences, with 23 success and 34 failure labels. The model sees the original keyframe montage, judges the current subtask, and explains a failure. This complements RBM: ordering two executions does not establish that a critic can recognize completion of an individual step or explain what went wrong.</p>
 <p class="fine">The benchmarks cover different critic interfaces, so we do not merge their results into one score. OOD refers to the RBM split; it does not establish that a general-purpose model never encountered related scenes in pretraining. RoboFail also has multiple adaptations. Our 57-question set is not the same support used by Guardian or PRIMO.</p>
-<h3 id="evaluation-questions" data-toc>1.2 Why evaluate the abilities in Sections 2–5 separately?</h3>
+<h3 id="evaluation-questions" data-toc>1.2 Why evaluate the abilities in Sections 2–6 separately?</h3>
 <div class="table-scroll" role="region" aria-label="Evaluation questions and potential uses. We test offline prerequisites, not benefits in a closed loop." tabindex="0">
 <table>
 <caption>Table 1. Evaluation questions and potential uses. We test offline prerequisites, not benefits in a closed loop.</caption>
@@ -131,17 +129,22 @@
 <td>Demonstration selection, candidate selection, and preference supervision require discrimination between better and worse executions.</td>
 </tr>
 <tr>
-<th scope="row">3 · Progress and context</th>
-<td>How far has the task progressed? Do examples change progress, endpoints, or ranking?</td>
+<th scope="row">3 · Task progress estimation</th>
+<td>How far has the task progressed?</td>
 <td>Dense feedback describes the execution process, but time correlation can conceal stalls, regressions, or incorrect completion judgments.</td>
 </tr>
 <tr>
-<th scope="row">4 · Success and failure</th>
+<th scope="row">4 · Effects of in-context examples</th>
+<td>Do examples change progress, endpoints, or ranking?</td>
+<td>Examples may affect the evaluation interfaces differently, so their effects need separate checks.</td>
+</tr>
+<tr>
+<th scope="row">5 · Success and failure</th>
 <td>Did the subtask succeed? How often are there false alarms and missed failures?</td>
 <td>Continuing execution or intervening involves different error costs. Accuracy alone can conceal more missed failures.</td>
 </tr>
 <tr>
-<th scope="row">5 · Failure explanations</th>
+<th scope="row">6 · Failure explanations</th>
 <td>When the label is correct, does the explanation identify the issue in the reference?</td>
 <td>Diagnosis and subsequent correction require specific evidence. A correct outcome label is not a reliable causal explanation.</td>
 </tr>
@@ -149,44 +152,37 @@
 </table>
 </div>
 <h3 id="metrics" data-toc>1.3 Inputs and metric definitions</h3>
-<div class="table-scroll" role="region" aria-label="Evaluation interfaces. Counts are not numbers of independent robot trials." tabindex="0">
-<table>
-<caption>Table 2. Evaluation interfaces. Counts are not numbers of independent robot trials.</caption>
-<thead>
-<tr>
-<th scope="col">Interface</th>
-<th scope="col">Model input</th>
-<th scope="col">Evaluation support</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope="row">Independent ranking</th>
-<td>Task text and eight frames from one trajectory; trajectories scored independently</td>
-<td>567 trajectories, 41 source–task groups</td>
-</tr>
-<tr>
-<th scope="row">Direct preference</th>
-<td>Two trajectories in one request; choose the better execution</td>
-<td>1,192 fixed pairs</td>
-</tr>
-<tr>
-<th scope="row">Progress estimation</th>
-<td>Task text with current and past observations; no future frames</td>
-<td>105 successful trajectories, five evaluation positions each</td>
-</tr>
-<tr>
-<th scope="row">Subtask diagnosis</th>
-<td>Original keyframe montage and question; output a label and explanation</td>
-<td>57 questions from 15 trajectory groups</td>
-</tr>
-</tbody>
-</table>
+<h4 class="method-group-title">
+<span>RBM</span>Assessing execution quality and task progress</h4>
+<dl class="protocol-list">
+<div>
+<dt>Progress estimation</dt>
+<dd>How much of the task is complete at the current observation? We select four moments from each of 105 successful trajectories. At each moment, Astra receives the task description, sampled observations up to that moment, and its previous scores. It estimates current completion progress from 0 to 1 and briefly explains its judgment.</dd>
 </div>
+<div>
+<dt>Trajectory ranking</dt>
+<dd>Can Astra distinguish the quality of different executions? We sample eight frames from each trajectory and provide them with the task description in a separate request. The model scores each trajectory, and the scores determine the order. The evaluation covers 567 trajectories and checks agreement with the reference quality ordering.</dd>
+</div>
+<div>
+<dt>Preference judgment</dt>
+<dd>When comparing two executions directly, can Astra select the better one? We use 1,192 fixed pairs, each for the same task. Eight frames from each trajectory are provided in one request, and the model selects the better execution.</dd>
+</div>
+</dl>
+<h4 class="method-group-title">
+<span>ROBOFAIL</span>Recognizing and explaining failures</h4>
+<dl class="protocol-list">
+<div>
+<dt>Subtask diagnosis</dt>
+<dd>Beyond overall execution quality, we ask whether Astra can identify failures in specific subtasks and explain them. We use 57 RoboFail subtask questions from 15 trajectory groups. The model receives a keyframe montage and a question, judges whether the subtask succeeds, and explains a failure. We then add five external examples to compare zero-shot and in-context learning (ICL) conditions.</dd>
+</div>
+</dl>
+<p class="fine">The progress protocol fixes the initial score at zero. Together with four model predictions, this gives five evaluation positions against the same time reference.</p>
 <p class="">
 <strong>Independent ranking: Kendall τa, higher is better.</strong> Within a source–task group, the reference quality order is success &gt; suboptimal &gt; failure. For pairs included by the scoring protocol, a correct order contributes +1, an inversion −1, and a predicted tie 0. Reference-quality ties must not be given an invented order; their inclusion follows the scorer. A group score can be written as (C − D) / N, where C and D count concordant and discordant pairs and N is the protocol’s pair count. Ties remain in the denominator, so assigning every trajectory the same score cannot yield a high τa. Aggregation must preserve the scorer’s inclusion rules and weights. We retain reported aggregates rather than interpret weighted decompositions as raw independent-pair counts.</p>
 <p class="">
-<strong>Direct preference: accuracy, higher is better.</strong> Divide correct choices by the 1,192 evaluated pairs and multiply by 100%. Both trajectories are visible to the model together, unlike ranking independently computed scores. τa is not accuracy: 0.8166 does not mean 81.66% of preference choices are correct.</p>
+<strong>Direct preference: equal-source accuracy, higher is better.</strong> Compute the fraction of correct choices within each source, then average the six source accuracies equally. Let cₛ be correct choices and nₛ the evaluated pairs in source s; the six sources contain 1,192 fixed pairs in total. Pooling all correct choices and dividing by 1,192 is not this aggregation. Both trajectories are visible together, unlike independently scored ranking. τa is not accuracy: 0.8166 does not mean 81.66% of preference choices are correct.</p>
+<div class="formula" role="math">A<sub>pref</sub> = (100 / 6) Σ<sub>s=1</sub>
+<sup>6</sup> (cₛ / nₛ)</div>
 <p class="">
 <strong>Progress: VOC and time-reference MSE.</strong> The <a class="inline-link" href="https://robometer.github.io/" target="_blank" rel="noopener">RBM definition of VOC</a> uses Pearson correlation. For one trajectory, let pᵢ be the prediction at evaluation position i and tᵢ the time reference from normalized frame position. Compute their correlation; the article reports it on a ×100 scale, higher being better. MSE measures numerical distance from the same time reference, lower being better.</p>
 <div class="formula" role="math">r = Σᵢ(pᵢ − p̄)(tᵢ − t̄) / √[Σᵢ(pᵢ − p̄)² · Σᵢ(tᵢ − t̄)²]<br>VOC = 100 × r<br>MSE = (1 / m) Σᵢ(pᵢ − tᵢ)²</div>
@@ -194,14 +190,14 @@
 <p class="">
 <strong>Outcome classification: accuracy, failure recall, false-alarm rate, and miss rate.</strong> Treat failure as positive: TP is a correctly detected failure, FN a missed failure, TN a correctly recognized success, and FP a success predicted as failure. Accuracy is (TP + TN) / 57; failure recall is TP / 34; false-alarm rate is FP / 23; and miss rate is FN / 34. All four are reported as percentages. They score the answers, not the robot’s execution success rate.</p>
 <p class="">
-<strong>Failure explanations: AHA composite ROUGE-L, higher is better.</strong> A wrong label receives 0, a correct success receives 1, and a correct failure receives stemmed ROUGE-L F1 between the original English explanation and reference. For the latter, let L be the longest common subsequence length of the token sequences: P = L / generated-token count, R = L / reference-token count, and F1 = 2PR / (P + R), with zero for no overlap. Sum scores over 57 questions and divide by 57. The composite mixes success recognition and failure-text overlap. Section 5 separates them rather than treating the composite as explanation accuracy.</p>
+<strong>Failure explanations: AHA composite ROUGE-L, higher is better.</strong> A wrong label receives 0, a correct success receives 1, and a correct failure receives stemmed ROUGE-L F1 between the original English explanation and reference. For the latter, let L be the longest common subsequence length of the token sequences: P = L / generated-token count, R = L / reference-token count, and F1 = 2PR / (P + R), with zero for no overlap. Sum scores over 57 questions and divide by 57. The composite mixes success recognition and failure-text overlap. Section 6 separates them rather than treating the composite as explanation accuracy.</p>
 <h3 id="comparison-protocol" data-toc>1.4 Comparators and how to read the ordering</h3>
 <p class="">Our study directly evaluates the relevant Astra, GPT-5.6-sol, and DeepSeek-V4.1-Flash configurations. The source material also records published robot reward and assessment results for Robometer, RynnValue, RoboReward, RoboDopamine, GVL, VLAC, ReWiND, TOPReward, and RL-VLM-F, plus AHA and other RoboFail methods. These are also learned methods, not non-AI systems. The CLIP+MLP comparator in Guardian also contains learned components and belongs to a different RoboFail adaptation.</p>
 <p class="">The full charts retain these baselines and order reported values within the displayed metric. VOC, τa, preference accuracy, classification accuracy, and ROUGE-L are not combined into one ranking. Source tags distinguish this study [S], the Robometer paper [P], its website [W], RynnValue [R], and AHA [A]. This is an ordering of recorded values: external methods were not rerun on our samples and inputs, and sample support, training, prompts, and aggregation can differ. Paper and website Robometer versions remain separate, missing results remain blank, and ICL is kept distinct from zero-shot.</p>
 <p class="">Non-learning references help test what a metric establishes. The following values are deductions from definitions or the current label counts, not new model experiments, and are not mixed into measured rankings. The available material contains no matched evaluation of human judges, hand-written visual rules, or sensor-threshold methods, so we cannot claim superiority over them. Released quality and outcome labels are scoring references, not results from a human-judge comparator experiment.</p>
 <div class="table-scroll" role="region" aria-label="Non-learning references: analytical deductions, not experimental runs." tabindex="0">
 <table>
-<caption>Table 3. Non-learning references: analytical deductions, not experimental runs.</caption>
+<caption>Table 2. Non-learning references: analytical deductions, not experimental runs.</caption>
 <thead>
 <tr>
 <th scope="col">Non-learning reference</th>
@@ -233,39 +229,364 @@
 </tbody>
 </table>
 </div>
-<p class="">Context conditions are interface-specific. Progress uses one same- or similar-task training trajectory with six stage scores. Ranking uses randomly selected high-, middle-, and low-score training trajectories without requiring a task match; the middle reference score is not the test set’s suboptimal label. RoboFail uses five fixed external image–question–answer demonstrations, reported disjoint from test trajectories. No ICL preference result is available. Context length and compute are not matched, and RoboFail returned backend identifiers differ, as discussed in Section 4.</p>
+<p class="">Context conditions are interface-specific. Progress uses one same- or similar-task training trajectory with six stage scores. Ranking uses randomly selected high-, middle-, and low-score training trajectories without requiring a task match; the middle reference score is not the test set’s suboptimal label. RoboFail uses five fixed external image–question–answer demonstrations, reported disjoint from test trajectories. No ICL preference result is available. Context length and compute are not matched, and RoboFail returned backend identifiers differ, as discussed in Section 5.</p>
 </section>
 <section id="results" class="" data-toc>
 <h2>2. Trajectory quality and preference</h2>
-<p class="">For independent scoring, the model observes each trajectory separately and the scores determine a ranking. Astra obtains Kendall τa of <strong>0.8166</strong>. This metric measures agreement with reference quality order; inversions and predicted ties reduce the score. In direct preference, the model sees both trajectories and selects the better execution, reaching <strong>92.4%</strong> accuracy. Because the input interfaces differ, preference accuracy is not the accuracy of ordering independently computed scores.</p>
-<p class="">Astra has the highest point estimate on all three metrics among the three zero-shot general-purpose configurations tested here. Relative to GPT-5.6-sol, the gaps are 0.0666 in ranking τa, 1.7 percentage points in preference accuracy, and 0.1 in progress VOC. The clearest numerical separation is in independent ranking. Repeat-call variance and confidence intervals are unavailable, so these differences are descriptive rather than significance claims.</p>
-<h3 id="literature" data-toc>2.1 Comparison with prior work</h3>
+<p class="">We use RBM robot trajectories to test whether Astra can judge execution quality and task progress. RBM-EVAL-OOD includes real robot trajectories from six sources with successful, suboptimal, and failed executions. We evaluate independent trajectory scores and progress on this support, and direct preference on a further 1,192 fixed RBM pairs.</p>
+<p class="fine">We first present zero-shot results and cases. Published values retain their own evaluation protocols and provide context, rather than a matched-protocol ranking. Context-example comparisons are grouped in Section 4.</p>
+<h3 id="ranking-results" data-toc>2.1 Trajectory quality ranking</h3>
+<p>Scoring 567 trajectories independently, Astra reaches a Kendall τa of <strong>0.8166</strong>, numerically above the reported values for the specially trained RynnValue-8B (0.675) and Robometer (0.655). This metric measures agreement between predicted and reference quality order; values closer to 1 are better. The result indicates strong discrimination of robot execution quality without task-specific fine-tuning.</p>
+<p>To understand where ranking errors arise, we inspect the scores and the reasons the model gives.</p>
+<h4 class="case-title">Understanding the errors</h4>
+<p>Ranking loses credit in two ways: different incomplete behaviors can be ordered opposite to the reference, and trajectories with different reference quality can receive the same high score. Astra can identify problems in an execution while still struggling to distinguish the relative quality of different incomplete behaviors.</p>
+<h4 class="case-title" id="banana-case">Case Study: moving the wrong object and tilting the plate</h4>
+<p>The task is to move the banana from the blue plate to the green plate. One execution moves the carrot, leaving the banana on the blue plate and the green plate empty; Astra scores it 0.00. Another lifts and tilts the blue plate, causing the banana to slip off without reaching the green plate, yet receives 0.15. The reasons identify that neither execution completes the goal. However, the reference labels the first suboptimal and the second failed, so the predicted order is reversed.</p>
+<div class="case-video-grid case-replay-grid" role="group" aria-labelledby="banana-case" aria-describedby="banana-case-note">
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/banana-wrong-object.jpg" aria-label="Moving the carrot, reference suboptimal · Astra 0.00, evaluation-input frame replay" aria-describedby="banana-wrong-object-caption">
+<source src="assets/case-studies/banana-wrong-object.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/banana-wrong-object.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="banana-wrong-object-caption">
+<strong>Moving the carrot</strong>Reference suboptimal · Astra 0.00</figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/banana-tilted-plate.jpg" aria-label="Banana slipping after the plate is tilted, reference failure · Astra 0.15, evaluation-input frame replay" aria-describedby="banana-tilted-plate-caption">
+<source src="assets/case-studies/banana-tilted-plate.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/banana-tilted-plate.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="banana-tilted-plate-caption">
+<strong>Banana slips after the plate is tilted</strong>Reference failure · Astra 0.15</figcaption>
+</figure>
+</div>
+<p class="case-replay-note" id="banana-case-note">Each replay shows the eight input images actually seen by the model, played at one frame per second. This is a sampled-frame replay, not continuous video at its original speed. The poster is the last input image.</p>
+<div class="table-scroll" role="region" tabindex="0">
+<table class="case-table">
+<caption>Table 3. Independent scores for executions of the same task</caption>
+<thead>
+<tr>
+<th scope="col">Trajectory</th>
+<th scope="col">Reference quality</th>
+<th scope="col">Astra score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Moving the carrot</th>
+<td>Suboptimal</td>
+<td>0.00</td>
+</tr>
+<tr>
+<th scope="row">Banana falls after the plate is lifted</th>
+<td>Failure</td>
+<td>0.15</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The disagreement concerns the relative assessment of two incomplete behaviors, rather than whether the model notices that the goal is incomplete.</p>
+<details class="method-detail">
+<summary>Read the original model responses</summary>
+<dl class="model-quotes">
+<div>
+<dt>Moving the carrot: 0.00</dt>
+<dd lang="en">The robot picks up the orange carrot rather than the yellow banana and releases it to the right of the green plate. The banana remains on the blue plate, and the green plate is empty.</dd>
+</div>
+<div>
+<dt>Banana slips after the plate is tilted: 0.15</dt>
+<dd lang="en">The robot approaches the banana but appears to lift and tilt the blue plate instead of grasping the banana. The banana slides or falls off to the right; no placement or release onto the green plate is visible.</dd>
+</div>
+</dl>
+</details>
+<h4 class="case-title" id="blue-bin-case">Case Study: different quality, the same full score</h4>
+<p>For two executions of opening the blue trash bin, the reference labels are success and suboptimal, but Astra assigns both <strong>1.00</strong>. For the successful execution, it cites the raised lid and clearly exposed interior. For the suboptimal execution, it also cites an opening beneath the lid and concludes that the correct bin is open. The lost credit comes from a tie: the model recognizes the shared outcome of opening the lid but does not distinguish the reference quality levels in its scores.</p>
+<div class="case-video-grid case-replay-grid" role="group" aria-labelledby="blue-bin-case" aria-describedby="blue-bin-case-note">
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/blue-bin-success.jpg" aria-label="Opening the blue trash bin, reference success · Astra 1.00, evaluation-input frame replay" aria-describedby="blue-bin-success-caption">
+<source src="assets/case-studies/blue-bin-success.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/blue-bin-success.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="blue-bin-success-caption">
+<strong>Opening the blue trash bin</strong>Reference success · Astra 1.00</figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/blue-bin-suboptimal.jpg" aria-label="Opening the blue trash bin, reference suboptimal · Astra 1.00, evaluation-input frame replay" aria-describedby="blue-bin-suboptimal-caption">
+<source src="assets/case-studies/blue-bin-suboptimal.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/blue-bin-suboptimal.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="blue-bin-suboptimal-caption">
+<strong>Opening the blue trash bin</strong>Reference suboptimal · Astra 1.00</figcaption>
+</figure>
+</div>
+<p class="case-replay-note" id="blue-bin-case-note">Each replay shows the eight input images actually seen by the model, played at one frame per second. This is a sampled-frame replay, not continuous video at its original speed. The poster is the last input image.</p>
+<details class="method-detail">
+<summary>Read the original model responses</summary>
+<dl class="model-quotes">
+<div>
+<dt>Reference success: 1.00</dt>
+<dd lang="en">The left gripper lifts the blue bin&#x27;s lid, leaving its dark interior visibly exposed in the final frames. The red and green bins remain closed.</dd>
+</div>
+<div>
+<dt>Reference suboptimal: 1.00</dt>
+<dd lang="en">The left gripper lifts the blue bin’s lid, leaving a visible opening beneath it in the final frame. The correct bin is opened; the red and green bins remain closed.</dd>
+</div>
+</dl>
+</details>
+<h3 id="preference-results" data-toc>2.2 Direct preference</h3>
+<p>When shown two trajectories together, the model chooses the better execution. Across 1,192 fixed pairs, Astra reaches <strong>92.4% source-equal accuracy</strong>, above the 82.5% reported by Robometer. This metric summarizes the fraction of correct choices within each source, reflecting Astra’s ability to compare and select robot executions.</p>
+<figure class="figure">
+<button type="button" data-zoom aria-label="Enlarge the direct-preference chart">
+<img loading="lazy" src="assets/figures/02_preference.png" alt="Direct preference: Astra has 92.4% source-equal accuracy across 1,192 fixed pairs." width="1384" height="576">
+</button>
+<figcaption>Figure 1. <span>Direct preference. Eight frames from each trajectory are compared in one request; accuracy is averaged equally over six sources.</span>
+<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+<p>When Astra selects an execution with lower reference quality, its explanation helps reveal the basis for that choice.</p>
+<h4 class="case-title">Understanding the errors</h4>
+<p>These cases show a gap between local visual cues and the assessment of overall execution quality. Astra can describe actions and object states, but these observations may not support a reliable preference. Sometimes its reason emphasizes a salient cue and weighs the evidence differently from the reference quality; in other cases, its interpretation of the task state may itself be mistaken.</p>
+<h4 class="case-title" id="separate-cups-case">Case Study: release or tipping when separating cups</h4>
+<p>In the task of separating the purple and red cups, Astra describes both executions as creating a large gap. One does not show release in the final frame and is labeled successful. The other clearly releases the purple cup, but the cup tips onto its side, and is labeled failed. Astra chooses the latter and explicitly mentions both release and tipping in its reason.</p>
+<div class="case-video-grid case-replay-grid" role="group" aria-labelledby="separate-cups-case" aria-describedby="separate-cups-case-note">
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/separate-cups-a.jpg" aria-label="A · Separate the red and purple cups, reference success · reference prefers A, evaluation-input frame replay" aria-describedby="separate-cups-a-caption">
+<source src="assets/case-studies/separate-cups-a.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/separate-cups-a.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="separate-cups-a-caption">
+<strong>A · Separate the red and purple cups</strong>Reference success · reference prefers A</figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/separate-cups-b.jpg" aria-label="B · Separate the red and purple cups, reference failure · Astra chooses B, evaluation-input frame replay" aria-describedby="separate-cups-b-caption">
+<source src="assets/case-studies/separate-cups-b.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/separate-cups-b.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="separate-cups-b-caption">
+<strong>B · Separate the red and purple cups</strong>Reference failure · Astra chooses B</figcaption>
+</figure>
+</div>
+<p class="case-replay-note" id="separate-cups-case-note">Each replay shows the eight input images actually seen by the model, played at one frame per second. This is a sampled-frame replay, not continuous video at its original speed. The poster is the last input image.</p>
+<p>The disagreement concerns how release and tipping are weighed, rather than whether tipping is observed.</p>
+<details class="method-detail">
+<summary>Read the original model responses</summary>
+<dl class="model-quotes">
+<div>
+<dt>The model chooses the reference failure (original response B)</dt>
+<dd lang="en">Both executions move the red cup left and purple cup right, creating a large gap. B additionally visibly releases the purple cup, which ends on its side away from the gripper; A ends with both cups still at the grippers, so release is not demonstrated.</dd>
+</div>
+</dl>
+</details>
+<h4 class="case-title" id="pencil-case-case">Case Study: choosing the reference failure when unzipping a pencil case</h4>
+<p>The task is to unzip a pencil case. Astra chooses the execution labeled failed: its reason says that the zipper slider moves toward the near end and leaves an opening behind it. For the reference success, it instead describes the slider moving toward the far end while the sides remain joined, as if closing the zipper. This interpretation of opening and closing leads to the opposite preference from the reference; a complete-sounding reason does not by itself make the judgment reliable.</p>
+<div class="case-video-grid case-replay-grid" role="group" aria-labelledby="pencil-case-case" aria-describedby="pencil-case-case-note">
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/unzip-pencil-case-a.jpg" aria-label="A · Unzip the pencil case, reference failure · Astra chooses A, evaluation-input frame replay" aria-describedby="unzip-pencil-case-a-caption">
+<source src="assets/case-studies/unzip-pencil-case-a.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/unzip-pencil-case-a.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="unzip-pencil-case-a-caption">
+<strong>A · Unzip the pencil case</strong>Reference failure · Astra chooses A</figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/unzip-pencil-case-b.jpg" aria-label="B · Unzip the pencil case, reference success · reference prefers B, evaluation-input frame replay" aria-describedby="unzip-pencil-case-b-caption">
+<source src="assets/case-studies/unzip-pencil-case-b.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/unzip-pencil-case-b.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="unzip-pencil-case-b-caption">
+<strong>B · Unzip the pencil case</strong>Reference success · reference prefers B</figcaption>
+</figure>
+</div>
+<p class="case-replay-note" id="pencil-case-case-note">Each replay shows the eight input images actually seen by the model, played at one frame per second. This is a sampled-frame replay, not continuous video at its original speed. The poster is the last input image.</p>
+<details class="method-detail">
+<summary>Read the original model responses</summary>
+<dl class="model-quotes">
+<div>
+<dt>The model chooses the reference failure (original response A)</dt>
+<dd lang="en">A moves the zipper slider toward the near end, leaving a visible opening behind it. B pulls the slider toward the far end and leaves the zipper edges joined, appearing to close rather than unzip the case.</dd>
+</div>
+</dl>
+</details>
+<h4 class="case-title" id="green-bin-case">Case Study: a wider opening does not establish higher quality</h4>
+<p>When comparing two executions of opening the green trash bin, Astra describes both as finding the correct bin and lifting its lid. It chooses the one with the lid raised farther and more of the interior exposed. The reference labels that execution suboptimal and the other successful. The model uses the observed opening width to choose, but that cue does not recover the reference distinction between success and suboptimal performance.</p>
+<div class="case-video-grid case-replay-grid" role="group" aria-labelledby="green-bin-case" aria-describedby="green-bin-case-note">
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/green-bin-a.jpg" aria-label="A · Open the green trash bin, reference suboptimal · Astra chooses A, evaluation-input frame replay" aria-describedby="green-bin-a-caption">
+<source src="assets/case-studies/green-bin-a.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/green-bin-a.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="green-bin-a-caption">
+<strong>A · Open the green trash bin</strong>Reference suboptimal · Astra chooses A</figcaption>
+</figure>
+<figure>
+<video controls playsinline preload="none" poster="assets/case-studies/green-bin-b.jpg" aria-label="B · Open the green trash bin, reference success · reference prefers B, evaluation-input frame replay" aria-describedby="green-bin-b-caption">
+<source src="assets/case-studies/green-bin-b.mp4" type="video/mp4">Your browser does not support video playback.<a href="assets/case-studies/green-bin-b.mp4">Open the input-frame replay</a>
+</video>
+<figcaption id="green-bin-b-caption">
+<strong>B · Open the green trash bin</strong>Reference success · reference prefers B</figcaption>
+</figure>
+</div>
+<p class="case-replay-note" id="green-bin-case-note">Each replay shows the eight input images actually seen by the model, played at one frame per second. This is a sampled-frame replay, not continuous video at its original speed. The poster is the last input image.</p>
+<details class="method-detail">
+<summary>Read the original model responses</summary>
+<dl class="model-quotes">
+<div>
+<dt>The model chooses the reference suboptimal execution (original response A)</dt>
+<dd lang="en">Both robots engage the correct green bin and lift its lid, but A raises the lid farther, leaving the interior more fully exposed. B ends with the lid only partially raised. Neither clearly demonstrates release.</dd>
+</div>
+</dl>
+</details>
+<h3 id="literature" data-toc>2.3 Comparison with prior work</h3>
 <p class="">RynnValue-8B reports ranking τa of 0.675. The Robometer paper reports τa of 0.655, preference accuracy of 82.5%, and progress VOC of 94.8. Astra’s ranking and preference values are numerically higher, while its progress VOC is lower than this Robometer record.</p>
 <p class="">These literature values were not rerun on our samples. RynnValue describes a 976-trajectory OOD suite, whereas this study scores 567 trajectories. External preference evaluation uses 500 different-quality pairs per OOD source; our study uses 1,192 fixed pairs with incompletely documented composition. Sample, input, and aggregation differences prevent a matched-protocol superiority claim.</p>
+<p class="">Astra has the highest point estimate on all three metrics among the three zero-shot general-purpose configurations tested here. Relative to GPT-5.6-sol, the gaps are 0.0666 in ranking τa, 1.7 percentage points in preference accuracy, and 0.1 in progress VOC. The clearest numerical separation is in independent ranking. Repeat-call variance and confidence intervals are unavailable, so these differences are descriptive rather than significance claims.</p>
+</section>
+<section id="progress-results" class="" data-toc>
+<h2 id="context">3. Task progress estimation</h2>
+<p>Beyond comparing whole executions, we ask whether Astra can estimate how much of a task is complete from its description and observations available up to the current moment. VOC measures correlation between predicted progress and normalized time; a high correlation does not guarantee an accurate final completion judgment. On 105 successful trajectories, Astra achieves <strong>VOC of 93.6</strong>, indicating that it can track execution progress from successive observations.</p>
+<p>Astra’s progress scores can reflect changes in task state rather than simply increase with time.</p>
+<h4 class="case-title">Case Study: progress changes with the execution</h4>
+<p>For the same task of putting the blue cup in the sink, successful placement, a slipping cup, and moving the wrong object produce different score changes.</p>
+<div class="demo" aria-label="Three robot executions of the same task">
+<figure>
+<video controls playsinline muted preload="none" poster="assets/rbm/q0041-poster.jpg" src="assets/rbm/q0041-replay.mp4" aria-label="Successful cup-task trajectory">
+</video>
+<figcaption>Figure 2. Successfully placed in the sink</figcaption>
+</figure>
+<figure>
+<video controls playsinline muted preload="none" poster="assets/rbm/q0039-poster.jpg" src="assets/rbm/q0039-replay.mp4" aria-label="Partially completed cup-task trajectory">
+</video>
+<figcaption>Figure 3. Cup slips outside the sink</figcaption>
+</figure>
+<figure>
+<video controls playsinline muted preload="none" poster="assets/rbm/q0037-poster.jpg" src="assets/rbm/q0037-replay.mp4" aria-label="Wrong-object cup-task trajectory">
+</video>
+<figcaption>Figure 4. The wrong object is moved</figcaption>
+</figure>
+</div>
+<p class="fine">These videos replay sampled frames, not continuous video at its original speed. During evaluation, the model sees only sampled observations available up to each moment.</p>
+<p>In the successful execution, Astra gives 0.60 while the blue cup is still suspended outside the sink, then raises it to 1.00 after placement and release. In the slipping execution, the score is 0.55 near the sink and falls to 0.40 after the cup slips outside. When the wrong object is moved, the blue cup never moves and the final progress returns to 0.00. These rises and falls correspond to progress toward or setbacks from the task goal, rather than time passing alone.</p>
+<a class="inline-link" href="evidence.html#trajectories">Explore per-step predictions and original responses ↗</a>
+</section>
+<section id="progress-icl" class="" data-toc>
+<h2 id="progress-icl-title">4. Effects of in-context examples (ICL)</h2>
+<p>We next ask whether reference examples can improve Astra’s assessments. With examples, progress VOC increases slightly, while trajectory-ranking agreement decreases.</p>
+<p>
+<strong>Progress estimation. </strong>With one same- or similar-task trajectory annotated with stage scores, VOC rises from <strong>93.6 to 94.2</strong>, a small increase in overall time correlation.</p>
 <figure class="figure">
-<button type="button" data-zoom aria-label="Enlarge: Independent ranking with all verified baselines">
-<img loading="lazy" src="assets/figures/01_ranking.png" alt="Independent ranking with all verified baselines">
+<button type="button" data-zoom aria-label="Enlarge the zero-shot and ICL progress comparison">
+<img loading="lazy" src="assets/figures/03_progress.png?v=voc" alt="Progress estimation: Astra has VOC of 93.6 zero-shot and 94.2 with single-trajectory ICL; external reports use different protocols." width="1384" height="960">
 </button>
-<figcaption>Figure 1. Full independent-ranking chart, retaining published RynnValue, Robometer, RoboReward, RoboDopamine, GVL, TOPReward, VLAC, and ReWiND records. Ordered by reported value; source and protocol distinctions are described in Section 1.4.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+<figcaption>Figure 5. <span>Zero-shot versus single-trajectory ICL for progress estimation (VOC). The model uses only observations available up to the current moment; external values retain their published protocols.</span>
+<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
 </figcaption>
 </figure>
+<p>
+<strong>Trajectory ranking. </strong>With three reference trajectories at different score levels, inversions decrease but ties increase. Kendall τa falls from <strong>0.8166 to 0.7953</strong>. Under score-consistent weighting, the inversion rate falls from 4.78% to 3.68%, while the tie rate rises from 8.78% to 13.11%.</p>
 <figure class="figure">
-<button type="button" data-zoom aria-label="Enlarge: Direct-preference comparison including Robometer and RL-VLM-F">
-<img loading="lazy" src="assets/figures/02_preference.png" alt="Direct-preference comparison including Robometer and RL-VLM-F">
+<button type="button" data-zoom aria-label="Enlarge the zero-shot and ICL ranking comparison">
+<img loading="lazy" src="assets/figures/01_ranking.png" alt="Trajectory ranking: Astra has Kendall τa of 0.8166 zero-shot and 0.7953 with three-reference ICL; external reports use different protocols." width="1384" height="1104">
 </button>
-<figcaption>Figure 2. Full direct-preference chart. Entries measure accuracy in choosing the better execution, but sample sets are not fully matched; missing preference values are not imputed.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+<figcaption>Figure 6. <span>Zero-shot versus three-reference ICL for ranking. Each test trajectory is scored independently from eight frames; external values retain their published protocols.</span>
+<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
 </figcaption>
 </figure>
+<p>Overall progress correlation improves slightly, but completion judgments can still worsen on individual trajectories. The bottle-opening example compares zero-shot and single-trajectory-example predictions for the same execution to show this difference.</p>
+<h4 class="case-title">Case Study: higher correlation, worse completion judgment</h4>
+<p>The same bottle-opening observations yield different judgments of whether the cap has separated.</p>
+<figure class="case-media">
+<video controls playsinline muted preload="none" poster="assets/rbm/t098-poster.jpg" src="assets/rbm/t098-replay.mp4" aria-label="Sampled-frame replay of bottle opening">
+</video>
+<figcaption>Figure 7. The video replays sampled frames, not continuous video at its original speed. The model uses observations available up to each moment rather than the full continuous video.</figcaption>
+</figure>
+<p>The reference terminal label is success. The zero-shot response says the cap has separated from the bottle mouth and gives final progress of 1.00. With an example, the response instead says that the cap appears to remain seated with no clear removal, and final progress falls to 0.35. The table places final progress alongside time correlation (VOC) and error (MSE) for the complete score sequence to show how these assessments differ.</p>
+<div class="table-scroll" role="region" tabindex="0">
+<table class="case-table">
+<caption>Table 4. Two evaluation conditions for the same bottle-opening trajectory</caption>
+<thead>
+<tr>
+<th scope="col">Condition</th>
+<th scope="col">VOC ↑</th>
+<th scope="col">MSE ↓</th>
+<th scope="col">Final progress</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th scope="row">Zero-shot</th>
+<td>90.51</td>
+<td>0.0407</td>
+<td>1.00</td>
+</tr>
+<tr>
+<th scope="row">Single-trajectory example</th>
+<td>95.36</td>
+<td>0.1312</td>
+<td>0.35</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>VOC rises from 90.51 to 95.36, while MSE also rises from 0.0407 to 0.1312. In this example, the cap-separation interpretation under the single-example condition conflicts with the reference success label, and final progress is underestimated. Higher VOC alone therefore does not establish that ICL improves progress assessment.</p>
+<details class="method-detail">
+<summary>Read the two original endpoint judgments</summary>
+<dl class="model-quotes">
+<div>
+<dt>Zero-shot</dt>
+<dd lang="en">The bottle has tilted away from the white cap, exposing its threaded neck behind the cap. The cap is separated from the mouth, achieving the opening goal.</dd>
+</div>
+<div>
+<dt>Single-trajectory ICL</dt>
+<dd lang="en">The bottle remains braced between the foreground jaws while the upper gripper has shifted around it. The white cap still appears seated, with no clear loosening or removal to establish further progress.</dd>
+</div>
+</dl>
+</details>
+<details class="research-detail">
+<summary>Trajectory-level changes and ranking decomposition</summary>
+<p class="">Changes differ across trajectories: of 105, VOC improves on 58, declines on 35, and is unchanged on 12. Of the 58 improvements, 11 have worse MSE. Aggregate time-reference MSE falls from 0.0402 to 0.0390. In the reported banana-transfer task, 18 of 19 trajectories decline and one is unchanged. These aggregate counts cannot be replaced by an individual case.</p>
+<p class="">Among 41 source–task ranking groups, eight improve, ten decline, and 23 remain unchanged. The breakdown below uses pair weights consistent with the reported score, rather than raw counts of independent pairs. It explains how the score changes without identifying the mechanism by which examples affect judgment.</p>
+<figure class="study-figure">
+<div class="stack-key">
+<span>
+<i>
+</i>Correct order</span>
+<span>
+<i>
+</i>Tie</span>
+<span>
+<i>
+</i>Inversion</span>
+</div>
+<div class="stack-heading">
+<strong>Zero-shot</strong>
+<span>τa 0.8166</span>
+</div>
+<div class="outcome-stack" role="img" aria-label="Correct order 86.44% · Tie 8.78% · Inversion 4.78%">
+<span style="width:86.44%">
+</span>
+<span style="width:8.78%">
+</span>
+<span style="width:4.78%">
+</span>
+</div>
+<p class="stack-values">Correct order 86.44% · Tie 8.78% · Inversion 4.78%</p>
+<div class="stack-heading">
+<strong>Three-reference ICL</strong>
+<span>τa 0.7953</span>
+</div>
+<div class="outcome-stack" role="img" aria-label="Correct order 83.21% · Tie 13.11% · Inversion 3.68%">
+<span style="width:83.21%">
+</span>
+<span style="width:13.11%">
+</span>
+<span style="width:3.68%">
+</span>
+</div>
+<p class="stack-values">Correct order 83.21% · Tie 13.11% · Inversion 3.68%</p>
+<figcaption>Figure 8. Weighted pair outcomes consistent with the reported scores, not unweighted counts of independent pairs. τa equals the correct-order weight minus the inversion weight.</figcaption>
+</figure>
+</details>
 <details class="research-detail">
 <summary>Complete result values and sources</summary>
-<div class="table-scroll" role="region" aria-label="Full RBM results, retaining distinct sources and versions." tabindex="0">
+<div class="table-scroll" role="region" aria-label="Full RBM results, retaining sources, versions, and context conditions." tabindex="0">
 <table>
-<caption>Table 4. Full RBM results, retaining distinct sources and versions.</caption>
+<caption>Table 5. Full RBM results, retaining sources, versions, and context conditions.</caption>
 <thead>
 <tr>
 <th scope="col">Configuration</th>
 <th scope="col">Source</th>
-<th scope="col">VOC ×100 ↑</th>
+<th scope="col">VOC ↑</th>
 <th scope="col">τa ↑</th>
 <th scope="col">Preference % ↑</th>
 </tr>
@@ -400,170 +721,20 @@
 </tbody>
 </table>
 </div>
-<p class="">The Robometer paper and website report VOC of 94.8 / 94.0 and τa of 0.655 / 0.643, respectively; both versions are retained. RBM-1M and RoboReward data in configuration names refer to training data. Missing values are not imputed. ICL is neither counted as an additional model nor selectively combined with zero-shot results.</p>
+<p class="">The Robometer paper and website report VOC of 94.8 / 94.0 and τa of 0.655 / 0.643, respectively; both versions are retained. RBM-1M and RoboReward data refer to training data. Missing values are not imputed. ICL is neither an additional model nor selectively combined with zero-shot results. Literature values were not rerun on this study’s samples and protocol.</p>
 </details>
-<h3 id="trajectory-cases" data-toc>2.2 What the quality labels look like</h3>
-<p class="">Three stored examples share the task “Put blue cup in sink”: Q0041 is labeled successful, Q0039 suboptimal, and Q0037 failed. In the replays, Q0041 places and releases the blue cup in the sink, Q0039 ends without placing it inside, and Q0037 moves another object while the blue cup remains in place. They illustrate the quality distinction within one task.</p>
-<div class="demo">
-<figure>
-<video controls playsinline muted preload="none" poster="assets/rbm/q0041-poster.jpg" src="assets/rbm/q0041-replay.mp4" aria-label="Q0041 · Reference: success">
-</video>
-<figcaption>Figure 3. Q0041 · Reference: success</figcaption>
-</figure>
-<figure>
-<video controls playsinline muted preload="none" poster="assets/rbm/q0039-poster.jpg" src="assets/rbm/q0039-replay.mp4" aria-label="Q0039 · Reference: suboptimal">
-</video>
-<figcaption>Figure 4. Q0039 · Reference: suboptimal</figcaption>
-</figure>
-<figure>
-<video controls playsinline muted preload="none" poster="assets/rbm/q0037-poster.jpg" src="assets/rbm/q0037-replay.mp4" aria-label="Q0037 · Reference: failure">
-</video>
-<figcaption>Figure 5. Q0037 · Reference: failure</figcaption>
-</figure>
-</div>
-<p class="fine">These post-hoc replays use stored sampled frames; playback speed differs from original execution speed. The case files contain progress predictions, not independent-ranking scores or direct-preference answers for these three trajectories. They illustrate reference quality labels, not a verified model decision on a particular pair.</p>
-</section>
-<section id="context" class="" data-toc>
-<h2>3. Progress estimation and context examples</h2>
-<p class="">Section 2 compares quality across executions. Here we examine progress within an execution and whether context examples make assessments more reliable. Under the interface-specific conditions in Section 1, we analyze progress correlation, endpoint estimates, and ranking discrimination.</p>
-<h3 id="progress" data-toc>3.1 Progress correlation and endpoint estimates</h3>
-<p class="">Across 105 successful trajectories, zero-shot Astra obtains VOC of 93.6. Predictions use only current and preceding frames and are compared with a time reference. VOC is reported on a ×100 scale and measures progress–time correlation, not completion accuracy. A task can remain in preparation for a long period before a late state change; semantic progress need not increase uniformly with time.</p>
-<figure class="figure">
-<button type="button" data-zoom aria-label="Enlarge: Progress comparison with the original robot-reward baselines">
-<img loading="lazy" src="assets/figures/03_progress.png" alt="Progress comparison with the original robot-reward baselines">
-</button>
-<figcaption>Figure 6. Full progress-VOC chart including Robometer, RoboReward, RoboDopamine, ReWiND, TOPReward, VLAC, and GVL. Paper and website versions remain separate. Correlation is not completion accuracy.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
-</figcaption>
-</figure>
-<p class="">With single-trajectory ICL, aggregate VOC rises to 94.2 and time-reference MSE falls from 0.0402 to 0.0390. Per-trajectory changes are mixed: VOC improves on 58 trajectories, declines on 35, and is unchanged on 12. In the reported banana-transfer task, 18 of 19 trajectories decline and one is unchanged. Of the 58 trajectories with higher VOC, 11 have worse MSE.</p>
-<div class="feature-case">
-<figure>
-<video controls playsinline muted preload="none" poster="assets/rbm/t098-poster.jpg" src="assets/rbm/t098-replay.mp4" aria-label="T098 · Open the bottle">
-</video>
-<figcaption>Figure 7. T098 · Open the bottle</figcaption>
-</figure>
-<div>
-<p class="">The public terminal label for bottle-opening case T098 is success. Zero-shot gives a terminal score of 1.00, while ICL gives 0.35. ICL has higher VOC, but its endpoint score is farther from the public success label and its time-reference MSE is about 3.22 times larger.</p>
-</div>
-</div>
-<div class="table-scroll" role="region" aria-label="Two evaluations of the bottle-opening case." tabindex="0">
-<table>
-<caption>Table 5. Two evaluations of the bottle-opening case.</caption>
-<thead>
-<tr>
-<th scope="col">Condition</th>
-<th scope="col">Terminal score</th>
-<th scope="col">VOC (unscaled) ↑</th>
-<th scope="col">MSE ↓</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope="row">Zero-shot</th>
-<td>1.00</td>
-<td>0.9051</td>
-<td>0.0407</td>
-</tr>
-<tr>
-<th scope="row">Single-trajectory ICL</th>
-<td>0.35</td>
-<td>0.9536</td>
-<td>0.1312</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p class="fine">This post-hoc example illustrates a disagreement between metrics; it does not estimate how often that disagreement occurs. We retain the public success label without independently adjudicating visual completion. MSE also uses the time reference, not human semantic-completion annotations.</p>
-<h3 id="progress-retry" data-toc>3.2 Case: progress regression during a retry</h3>
-<div class="feature-case">
-<figure>
-<video controls playsinline muted preload="none" poster="assets/rbm/t011-poster.jpg" src="assets/rbm/t011-replay.mp4" aria-label="T011 · Transfer the banana from the blue to the green plate">
-</video>
-<figcaption>Figure 8. T011 · Transfer the banana from the blue to the green plate</figcaption>
-</figure>
-<div>
-<p class="">In this successful trajectory, the arm withdraws after its first approach while the banana remains on the blue plate, approaches again, and eventually transfers it to the green plate. The stored zero-shot progress sequence is 0 → 0.15 → 0 → 0.15 → 1.00. Time passing and arm motion are not treated uniformly as task progress.</p>
-</div>
-</div>
-<div class="table-scroll" role="region" aria-label="Stored zero-shot record for T011. The initial zero is fixed by protocol; later values are predictions." tabindex="0">
-<table>
-<caption>Table 6. Stored zero-shot record for T011. The initial zero is fixed by protocol; later values are predictions.</caption>
-<thead>
-<tr>
-<th scope="col">Stored frame index</th>
-<th scope="col">0</th>
-<th scope="col">7</th>
-<th scope="col">15</th>
-<th scope="col">23</th>
-<th scope="col">31</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope="row">Model progress</th>
-<td>0.00</td>
-<td>0.15</td>
-<td>0.00</td>
-<td>0.15</td>
-<td>1.00</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p class="fine">This case illustrates regression and retry, not accuracy against human stage annotations. No paired ICL record is supplied for this example. The aggregate ICL results on 19 banana-transfer trajectories discussed above remain a separate analysis.</p>
-<h3 id="ranking-context" data-toc>3.3 Ties and inversions in ranking</h3>
-<p class="">With three reference trajectories, τa falls from 0.8166 to 0.7953. Of 41 source–task groups, eight improve, ten decline, and 23 remain unchanged. Under score-consistent pair weighting, inversions fall from 4.78% to 3.68%, but ties rise from 8.78% to 13.11% and correct strict orders fall from 86.44% to 83.21%.</p>
-<figure class="study-figure">
-<div class="stack-key">
-<span>
-<i>
-</i>Correct order</span>
-<span>
-<i>
-</i>Tie</span>
-<span>
-<i>
-</i>Inversion</span>
-</div>
-<div class="stack-heading">
-<strong>Zero-shot</strong>
-<span>τa 0.8166</span>
-</div>
-<div class="outcome-stack" role="img" aria-label="Correct order 86.44% · Tie 8.78% · Inversion 4.78%">
-<span style="width:86.44%">
-</span>
-<span style="width:8.78%">
-</span>
-<span style="width:4.78%">
-</span>
-</div>
-<p class="stack-values">Correct order 86.44% · Tie 8.78% · Inversion 4.78%</p>
-<div class="stack-heading">
-<strong>Three-reference ICL</strong>
-<span>τa 0.7953</span>
-</div>
-<div class="outcome-stack" role="img" aria-label="Correct order 83.21% · Tie 13.11% · Inversion 3.68%">
-<span style="width:83.21%">
-</span>
-<span style="width:13.11%">
-</span>
-<span style="width:3.68%">
-</span>
-</div>
-<p class="stack-values">Correct order 83.21% · Tie 13.11% · Inversion 3.68%</p>
-<figcaption>Figure 9. Weighted pair outcomes consistent with the reported scores, not unweighted counts of independent pairs. τa equals the correct-order weight minus the inversion weight.</figcaption>
-</figure>
-<p class="">Fewer inversions therefore do not produce a better ranking. More ties leave executions of different quality indistinguishable and offset the reduction in inversions. The decomposition explains the score change, but does not identify the mechanism by which examples affect judgment.</p>
 </section>
 <section id="failure" class="" data-toc>
-<h2>4. Subtask success and failure</h2>
-<p class="">RoboFail asks the model to classify subtask success from a keyframe montage and explain failures. Zero-shot detects 32 of 34 failures, giving 94.12% failure recall. It also misclassifies 18 of 23 successes as failures, yielding overall accuracy of 37 / 57, or 64.91%.</p>
-<p class="">With five external image–question–answer examples, the model answers 49 / 57 correctly, or 85.96%. Correct-success judgments rise from 5 to 21, while correct-failure judgments fall from 32 to 28. The net gain of 12 correct answers consists of 16 additional successes recognized and four fewer failures detected.</p>
+<h2>5. Subtask success and failure</h2>
+<p>We further test Astra’s ability to recognize and explain failures on the AHA adaptation of RoboFail. The evaluation contains <strong>57 subtask questions from 15 trajectory groups</strong> and asks the model to determine subtask success from keyframes and explain failures. Reading the judgment alongside its reason allows researchers to inspect the cited evidence and potential errors.</p>
+<p>Zero-shot Astra identifies 32 of 34 failed subtasks, reaching failure recall of <strong>94.12%</strong>. Overall accuracy is <strong>64.91%</strong>, above the reported values for the specially trained AHA-7B (62.5%) and AHA-13B (Llama-2, 64.3%), and close to AHA-13B (Vicuna) at 66.1%. This shows an ability to assess subtask outcomes without task-specific fine-tuning. Its judgments are conservative, however: 18 of 23 successful subtasks are predicted as failures.</p>
+<p>With five external in-context learning (ICL) examples, Astra’s overall accuracy reaches <strong>85.96%</strong>, above AHA-13B (Vicuna)’s reported 66.1%. Benchmark composite ROUGE-L also rises from the zero-shot score of <strong>0.185</strong> to <strong>0.499</strong>, above that model’s 0.290. Successful subtasks incorrectly predicted as failures decrease from <strong>18 to 2</strong>, indicating better discrimination of success and failure. However, missed failures also increase from <strong>2 to 6</strong>, so higher overall accuracy still involves a tradeoff between false alarms and misses. About <strong>89.3%</strong> of the composite ROUGE-L gain comes from recognizing more successful subtasks correctly; explanation quality still requires examination of individual cases.</p>
+<p class="fine">The literature values above were not rerun on our 57 questions, and exact question sets are unaligned; they are listed separately as context.</p>
 <figure class="figure">
 <button type="button" data-zoom aria-label="Enlarge: Outcome classification including AHA and other baselines">
-<img loading="lazy" src="assets/figures/04_robofail_icl.png" alt="Outcome classification including AHA and other baselines">
+<img loading="lazy" src="assets/figures/04_robofail_icl.png" alt="Outcome classification including AHA and other baselines" width="1180" height="875">
 </button>
-<figcaption>Figure 10. Full study and AHA-literature classification chart, retaining AHA-7B/13B, GPT-4o, LLaVA, Qwen-VL, and Gemini records. Study and literature blocks are separated; exact question sets remain unaligned.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+<figcaption>Figure 9. Full study and AHA-literature classification chart, retaining AHA-7B/13B, GPT-4o, LLaVA, Qwen-VL, and Gemini records. Study and literature blocks are separated; exact question sets remain unaligned.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
 </figcaption>
 </figure>
 <figure class="diagnosis">
@@ -609,7 +780,7 @@
 <b data-cell>32</b>Correct failure</div>
 </div>
 </div>
-    <figcaption>Figure 11. Classification on the same 57 questions, treating failure as positive. A false alarm is a reference success predicted as failure; a miss is a reference failure predicted as success. This is offline classification, not a timestamped online alarm.</figcaption>
+    <figcaption>Figure 10. Classification on the same 57 questions, treating failure as positive. A false alarm is a reference success predicted as failure; a miss is a reference failure predicted as success. This is offline classification, not a timestamped online alarm.</figcaption>
 </figure>
 <p class="">An image-free reference always answers “failure.” From the current label counts, it gets 34 / 57 correct, or 59.65%. Zero-shot is 5.26 percentage points higher, recognizing five successes while missing two failures. This label-count deduction shows why accuracy must be read alongside both error types, rather than failure detection alone.</p>
 <p class="">The false-alarm rate on successful subtasks falls from 78.26% to 8.70%, while the miss rate on failures rises from 5.88% to 17.65%. The five-example condition recognizes success more often, but also misses more failures. The practical choice depends on the costs of unnecessary intervention and missed failures, which are not measured here.</p>
@@ -618,7 +789,7 @@
 <summary>Full results and distinct RoboFail adaptations</summary>
 <div class="table-scroll" role="region" aria-label="This study and published AHA records; exact question alignment is unverified." tabindex="0">
 <table>
-<caption>Table 7. This study and published AHA records; exact question alignment is unverified.</caption>
+<caption>Table 6. This study and published AHA records; exact question alignment is unverified.</caption>
 <thead>
 <tr>
 <th scope="col">Configuration</th>
@@ -701,7 +872,7 @@
 <p class="">Guardian uses 153 execution and 30 planning examples; PRIMO uses 100 Cosmos-curated examples. These supports differ from ours, and no Astra result is available on either. The literature records below remain separate from our 85.96% result.</p>
 <div class="table-scroll" role="region" aria-label="Guardian v4, Tables 1/2. +GF denotes training on GuardianFail-36k." tabindex="0">
 <table>
-<caption>Table 8. Guardian v4, Tables 1/2. +GF denotes training on GuardianFail-36k.</caption>
+<caption>Table 7. Guardian v4, Tables 1/2. +GF denotes training on GuardianFail-36k.</caption>
 <thead>
 <tr>
 <th scope="col">Configuration</th>
@@ -760,7 +931,7 @@
 </div>
 <div class="table-scroll" role="region" aria-label="PRIMO, Table 3 / Appendix A.3." tabindex="0">
 <table>
-<caption>Table 9. PRIMO, Table 3 / Appendix A.3.</caption>
+<caption>Table 8. PRIMO, Table 3 / Appendix A.3.</caption>
 <thead>
 <tr>
 <th scope="col">Configuration</th>
@@ -816,61 +987,85 @@
 </table>
 </div>
 </details>
-<h3 id="classification-case" data-toc>4.1 Case: a persistent false alarm on slicing</h3>
-<figure class="figure">
-<button type="button" data-zoom aria-label="Enlarge: Original input montage for the carrot-slicing subtask">
-<img loading="lazy" src="assets/robofail/case-036-input.jpg" alt="Original input montage for the carrot-slicing subtask">
-</button>
-<figcaption>Figure 12. RoboFail case 36. The model input is this montage and its question; white cells are future subtasks.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+<p>Higher overall accuracy accompanies fewer false alarms and more misses, but individual judgments and their reasons still need separate checks. Two cases illustrate these disagreements. For the knob grasp, the zero-shot response matches the failure label but gives a different cause from the reference; the five-example condition then predicts success for the same failed subtask. For slicing, both conditions predict failure because they describe the carrot as intact, contrary to the reference success label.</p>
+<h3 class="case-title" id="robofail-cases" data-toc>
+<span class="number">Case Study</span>Check outcome judgments and explanations separately</h3>
+<div class="case-video-grid" aria-label="Source videos for two types of RoboFail judgment error">
+<figure>
+<video controls playsinline muted preload="none" poster="assets/robofail/case-055-frame-4.jpg" src="assets/robofail/case-055-source-replay.mp4" aria-label="Source video of grasping the stove knob">
+</video>
+<figcaption>Figure 11. <strong>Grasp the stove knob</strong>
+<span>The reference labels a failure because the gripper does not close. Zero-shot also predicts failure but cites an incorrect grasp location; the five-example condition predicts success.</span>
 </figcaption>
 </figure>
-<div class="table-scroll" role="region" aria-label="Paraphrases of the saved answers for case 36." tabindex="0">
-<table>
-<caption>Table 10. Paraphrases of the saved answers for case 36.</caption>
-<thead>
-<tr>
-<th scope="col">Source</th>
-<th scope="col">Outcome judgment</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope="row">Reference label</th>
-<td>Success</td>
-</tr>
-<tr>
-<th scope="row">Zero-shot</th>
-<td>Failure: describes an incomplete cut and an intact carrot.</td>
-</tr>
-<tr>
-<th scope="row">Five-example</th>
-<td>Failure: still describes the carrot as unsliced.</td>
-</tr>
-</tbody>
-</table>
+<figure>
+<video controls playsinline muted preload="none" poster="assets/robofail/case-036-frame-3.jpg" src="assets/robofail/case-036-source-replay.mp4" aria-label="Source video of slicing the carrot">
+</video>
+<figcaption>Figure 12. <strong>Slice the carrot</strong>
+<span>The reference labels success. Zero-shot and five-example responses both predict failure, describing no completed slice.</span>
+</figcaption>
+</figure>
 </div>
-<p class="">Both conditions disagree with the released success label. Fewer false alarms overall do not mean every false alarm is corrected. This records a label disagreement; model text does not establish an annotation error. Independent review is needed to distinguish limited observation, label ambiguity, and model error. The knob-grasping case in Section 5 shows the opposite direction: a detected failure becomes a miss under five examples.</p>
+<p class="fine">These are source-trajectory replays. The evaluation input consists only of a keyframe montage and the question.</p>
+<details class="method-detail">
+<summary>Inspect the knob case’s evaluation keyframes</summary>
+<figure class="figure case-observations">
+<button type="button" data-zoom aria-label="Enlarge the stove-knob keyframes">
+<img loading="lazy" src="assets/robofail/case-055-observations.jpg" alt="Stove-knob case: four keyframes matched to the original model input, for inspecting judgments and explanations." width="1280" height="722">
+</button>
+<figcaption>Figure 13. <span>The four keyframes in the knob case’s evaluation input.</span>
+<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+</figcaption>
+</figure>
+</details>
+<p>The knob case shows that a correct outcome label need not come with a correct explanation. The slicing case shows that a successful execution can still be classified as a failure.</p>
+<details class="method-detail">
+<summary>Read the reference and original model responses</summary>
+<dl class="model-quotes">
+<div>
+<dt>Reference answer</dt>
+<dd lang="en">No, The robot gripper fails to close the gripper.</dd>
+</div>
+<div>
+<dt>Zero-shot</dt>
+<dd lang="en">No. The gripper is positioned over the burner area rather than around a stove knob, so it has not established a secure grasp on the knob.</dd>
+</div>
+<div>
+<dt>Five-example ICL</dt>
+<dd lang="en">Yes, the robot successfully grasped the stove knob.</dd>
+</div>
+</dl>
+</details>
+<p class="fine">
+<a class="inline-link" href="assets/robofail/case-055-input.jpg" target="_blank" rel="noopener">Open the knob input montage ↗</a> · <a class="inline-link" href="assets/robofail/case-036-input.jpg" target="_blank" rel="noopener">Open the slicing input montage ↗</a>
+</p>
+<a class="inline-link" href="evidence.html#failure-cases">Explore keyframes, references, and model explanations ↗</a>
 <details class="research-detail">
-<summary>Original English answers</summary>
+<summary>Slicing reference and original responses</summary>
+<blockquote>
+<strong>Reference answer</strong>
+<p lang="en">Yes, the robot succeed at the sub-task.</p>
+</blockquote>
 <blockquote>
 <strong>Zero-shot</strong>
-<p>No. The arm moves toward the carrot, but the blade does not complete a cut through it. The carrot remains intact on the board, with no visibly separated slice.</p>
+<p lang="en">No. The arm moves toward the carrot, but the blade does not complete a cut through it. The carrot remains intact on the board, with no visibly separated slice.</p>
 </blockquote>
 <blockquote>
 <strong>Five-example</strong>
-<p>No, the carrot remains whole on the counter; the robot did not successfully cut it into slices.</p>
+<p lang="en">No, the carrot remains whole on the counter; the robot did not successfully cut it into slices.</p>
 </blockquote>
 </details>
+<p class="fine">These post-hoc examples examine disagreements in labels and reasons, not error frequencies. Model text neither establishes that a reference label is wrong nor independently verifies a stated physical cause.</p>
 </section>
 <section id="explanations" class="" data-toc>
-<h2>5. Failure explanations and composite scores</h2>
+<h2>6. Failure explanations and composite scores</h2>
 <p class="">Composite ROUGE-L rises from 0.185 to 0.499 in the five-example condition. This metric does not measure failure explanations alone. Under the AHA rules, a correct success answer receives 1; a correct failure receives stemmed ROUGE-L F1 against the reference explanation; and a label disagreement receives 0. Scores are summed and divided by 57. Evaluation uses the original English answers, not the Chinese paraphrases in this article.</p>
 <div class="formula" role="math" aria-label="Composite score equals correct successes plus summed explanation scores for correctly detected failures, divided by 57">R = (correct successes + summed explanation scores for correct failures) / 57</div>
 <figure class="figure">
 <button type="button" data-zoom aria-label="Enlarge: Composite ROUGE-L including AHA and other baselines">
-<img loading="lazy" src="assets/figures/05_robofail_icl.png" alt="Composite ROUGE-L including AHA and other baselines">
+<img loading="lazy" src="assets/figures/05_robofail_icl.png" alt="Composite ROUGE-L including AHA and other baselines" width="1180" height="875">
 </button>
-<figcaption>Figure 13. Full composite ROUGE-L chart retaining the original literature baselines. The score includes both success recognition and failure explanations; it is not explanation accuracy.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
+<figcaption>Figure 14. Full composite ROUGE-L chart retaining the original literature baselines. The score includes both success recognition and failure explanations; it is not explanation accuracy.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
 </figcaption>
 </figure>
 <figure class="study-figure">
@@ -902,60 +1097,16 @@
 <span>0</span>
 <span>0.55</span>
 </div>
-<figcaption>Figure 14. Components of composite ROUGE-L, both divided by 57. Both bars use a 0–0.55 scale. Components and totals are rounded separately and may differ in the last decimal.</figcaption>
+<figcaption>Figure 15. Components of composite ROUGE-L, both divided by 57. Both bars use a 0–0.55 scale. Components and totals are rounded separately and may differ in the last decimal.</figcaption>
 </figure>
 <p class="">The correct-success term rises from 0.0877 to 0.3684. Its increase, 16 / 57 ≈ 0.2807, accounts for about 89.3% of the reported total gain of 0.3144. The failure-explanation term rises from 0.0969 to 0.1305, accounting for the remaining 10.7%. A score of 0.499 therefore does not mean that 49.9% of failure explanations are correct. Most of the gain comes from recognizing success.</p>
 <p class="">The explanation term also depends on which failures are detected and on lexical overlap with reference text. It does not independently distinguish a correct paraphrase from a similarly worded but incorrect diagnosis. Assessing the stated cause requires additional semantic review and physical evidence.</p>
-<h3 id="knob-case" data-toc>5.1 The knob-grasping case</h3>
-<figure class="figure">
-<button type="button" data-zoom aria-label="Enlarge: Original model-input montage for the knob-grasping subtask">
-<img loading="lazy" src="assets/robofail/case-055-input.jpg" alt="Original model-input montage for the knob-grasping subtask">
-</button>
-<figcaption>Figure 15. Original input for RoboFail case 55. White cells represent future subtasks. Open the image to inspect it at full size.<span class="zoom-label" aria-hidden="true">Enlarge ↗</span>
-</figcaption>
-</figure>
-<div class="table-scroll" role="region" aria-label="Paraphrases of saved responses; original English answers appear below." tabindex="0">
-<table>
-<caption>Table 11. Paraphrases of saved responses; original English answers appear below.</caption>
-<thead>
-<tr>
-<th scope="col">Source</th>
-<th scope="col">Judgment and explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<th scope="row">Reference</th>
-<td>Failure: the gripper did not close.</td>
-</tr>
-<tr>
-<th scope="row">Zero-shot</th>
-<td>Predicts failure, but describes an incorrect grasp location and no secure grasp.</td>
-</tr>
-<tr>
-<th scope="row">Five-example</th>
-<td>Predicts that the robot successfully grasped the knob.</td>
-</tr>
-</tbody>
-</table>
-</div>
-<p class="">The zero-shot label agrees with the reference, but its explanation does not identify the gripper-closure issue in the reference answer. The five-example condition predicts success for the same failed subtask. This case illustrates why labels and explanations need separate review; it neither estimates aggregate error frequency nor verifies the physical cause stated by either response.</p>
-<details class="research-detail">
-<summary>Original English answers</summary>
-<blockquote>
-<strong>Zero-shot</strong>
-<p>No. The gripper is positioned over the burner area rather than around a stove knob, so it has not established a secure grasp on the knob.</p>
-</blockquote>
-<blockquote>
-<strong>Five-example</strong>
-<p>Yes, the robot successfully grasped the stove knob.</p>
-</blockquote>
-</details>
+<p class="">The earlier <a class="inline-link" href="#robofail-cases">knob and slicing cases</a> show why labels and explanations need separate review. Neither lexical overlap nor aggregate score changes replace checking the evidence cited for an individual judgment.</p>
 </section>
 <section id="outlook" class="" data-toc>
-<h2>6. Discussion and limitations</h2>
+<h2>7. Discussion and limitations</h2>
 <p class="">These results support further study of Astra for offline robot assessment: it distinguishes execution quality, tracks progress, and detects many failures in the evaluated samples. The effects of examples nevertheless differ across metrics. Progress evaluation should include endpoint judgments; ranking should include ties; classification should report false alarms and misses separately; and explanations need validation beyond lexical overlap.</p>
-<h3 id="limitations" data-toc>6.1 Limitations</h3>
+<h3 id="limitations" data-toc>7.1 Limitations</h3>
 <p class="">
 <strong>Scope.</strong> No policy is trained or controlled using the critic. We do not measure reinforcement-learning sample efficiency, online failure localization, recovery, or closed-loop success. Offline scores do not establish reliable contact-state reasoning, causal diagnosis, or reward-model deployment safety.</p>
 <p class="">
@@ -969,7 +1120,7 @@
 <p class="">The available materials provide evaluation counts, demonstration constructions, aggregates, and selected cases. Full independent reproduction still requires source and sample manifests, preference split composition, input-frame identities and resolution, complete prompts and demonstration identities, requested and returned model versions, run dates, output budgets and sampling settings, and parsing, refusal, retry, and missing-output rules.</p>
 <p class="">Scorer versions, aggregation weights, tie conventions, and per-sample predictions are also needed for score audits and uncertainty estimates that preserve trajectory or source–task dependence. Completing the release would not itself resolve backend or example-selection confounds; missing materials are also not evidence that the underlying experiments are invalid.</p>
 </details>
-<h3 id="next-steps" data-toc>6.2 Next: reinforcement learning with critic feedback</h3>
+<h3 id="next-steps" data-toc>7.2 Next: reinforcement learning with critic feedback</h3>
 <p class="">We plan to use Astra’s assessments in reinforcement learning to test whether evaluating existing trajectories translates into better policy learning. We will first verify model snapshots, prompts, inputs, and demonstration selection, checking stability through repeated calls and independent annotation. We will then fix policy initialization, the training algorithm, and the environment interaction budget while comparing feedback sources.</p>
 <p class="">
 <strong>Reward and preference pathways.</strong> One path converts validated progress or success judgments into rewards for policy optimization. Another uses trajectory preferences to supervise a reward model for policy learning. We will compare the signals separately and test calibration rather than assume that a high offline score makes an effective reward. Whether failure explanations help recovery or data selection requires separate ablations, not an inference from ROUGE-L.</p>
@@ -983,6 +1134,15 @@
 <ul class="resource-links">
 <li>
 <a href="data/report.json" download>Result tables and metric definitions ↓</a>
+</li>
+<li>
+<a href="assets/Beyond-the-Score.pdf" >Technical report ↗</a>
+</li>
+<li>
+<a href="assets/Beyond-the-Score-blog.md" download>Original blog manuscript ↓</a>
+</li>
+<li>
+<a href="evidence.html" >Interactive evidence and per-step predictions ↗</a>
 </li>
 <li>
 <a href="data/rbm-cases.json" download>Trajectory case data ↓</a>

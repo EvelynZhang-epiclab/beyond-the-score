@@ -48,7 +48,11 @@ function reading() {
   let tocId = activeId;
   const activeLink = tocLinks.find(a => a.hash === '#' + activeId);
   if (mobile && activeLink?.classList.contains('subsection')) {
-    tocId = document.getElementById(activeId).closest('section').id;
+    let parent = document.getElementById(activeId).closest('section');
+    while (parent && !tocLinks.some(a => !a.classList.contains('subsection') && a.hash === '#' + parent.id)) {
+      parent = parent.parentElement?.closest('section');
+    }
+    tocId = parent?.id || activeId;
   }
   tocLinks.forEach(a => {
     const selected = a.hash === '#' + tocId;

@@ -17,3 +17,29 @@ dialog{width:min(1280px,95vw);max-height:92vh;border:0;padding:44px 16px 16px;ba
 @media(prefers-reduced-motion:reduce){:root{scroll-behavior:auto}*{transition:none!important}}
 
 .article blockquote{margin:18px 0;padding:2px 20px;border-left:2px solid var(--line)}.article blockquote>strong{font-size:12px;color:var(--green)}.article blockquote p{font-size:13px;line-height:1.8;overflow-wrap:anywhere}.formula{font-variant-numeric:tabular-nums}
+
+/* Reviewed case studies share the bilingual article's typography and media rules. */
+.article h4.case-title{font-size:17px;line-height:1.55;font-weight:600;margin:32px 0 14px;text-wrap:balance}
+.case-title .number{display:block;color:var(--green);font-size:11px;letter-spacing:.1em;margin-bottom:7px}
+.case-video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:24px 0}
+.case-video-grid figure,.case-media{margin:0;min-width:0}
+.case-video-grid video,.case-media video{display:block;width:100%;aspect-ratio:4/3;object-fit:contain;background:#17261f}
+.case-video-grid figcaption,.case-media figcaption{font-size:11px;line-height:1.8;color:var(--muted);margin-top:10px}
+.case-video-grid figcaption strong,.case-video-grid figcaption span{display:block}
+.case-media{max-width:680px;margin:24px auto}
+.article .case-replay-note{font-size:12px;line-height:1.8;color:var(--muted)}
+.method-detail{margin:24px 0;border-block:1px solid var(--line);padding:0 2px}
+.method-detail>summary{padding:16px 0;font-size:12px;line-height:1.7;color:var(--green);cursor:pointer}
+.model-quotes{margin:10px 0 22px}
+.model-quotes>div{margin:16px 0;padding:2px 18px;border-left:2px solid var(--line)}
+.model-quotes dt{font-size:12px;font-weight:600;color:var(--green);margin-bottom:8px}
+.model-quotes dd{margin:0;font-size:13px;line-height:1.85;overflow-wrap:anywhere}
+.method-group-title{font-size:16px;line-height:1.6;margin:25px 0 14px}
+.method-group-title>span{font-size:11px;color:var(--green);letter-spacing:.08em;margin-right:12px}
+.protocol-list{margin:0}
+.protocol-list>div{display:grid;grid-template-columns:108px minmax(0,1fr);gap:20px;padding:16px 0;border-bottom:1px solid var(--line)}
+.protocol-list dt{font-size:13px;font-weight:600;line-height:1.8}
+.protocol-list dd{margin:0;min-width:0;font-size:14px;line-height:1.9;color:#465149}
+
+
+@media(max-width:600px){.case-video-grid{grid-template-columns:1fr;gap:24px}.protocol-list>div{grid-template-columns:1fr;gap:6px}.article h4.case-title{font-size:16px}.case-media{margin:22px 0}.model-quotes>div{padding-left:14px}}

@@ -1,0 +1,26 @@
+{
+  "assets/figures/01_ranking.png": [
+    1384,
+    1104
+  ],
+  "assets/figures/02_preference.png": [
+    1384,
+    576
+  ],
+  "assets/figures/03_progress.png": [
+    1384,
+    960
+  ],
+  "assets/figures/04_robofail_icl.png": [
+    1180,
+    875
+  ],
+  "assets/figures/05_robofail_icl.png": [
+    1180,
+    875
+  ],
+  "assets/robofail/case-055-observations.jpg": [
+    1280,
+    722
+  ]
+}
