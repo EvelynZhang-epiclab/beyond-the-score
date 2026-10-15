@@ -22,5 +22,13 @@
   "assets/robofail/case-055-observations.jpg": [
     1280,
     722
+  ],
+  "assets/robofail/case-055-keyframes.gif": [
+    480,
+    270
+  ],
+  "assets/robofail/case-036-keyframes.gif": [
+    480,
+    270
   ]
 }
