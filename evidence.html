@@ -23,7 +23,7 @@
   <a class="brand" href="#top" aria-label="Simple AI — back to top">SIMPLE<span>·AI</span></a>
   <a class="project-name" href="index.html">← Research blog</a>
   <nav aria-label="Main navigation"><a href="#overview">Overview</a><a href="#results">Results</a><a href="#trajectories">Replay</a><a href="#diagnosis">RoboFail</a></nav>
-  <a class="button dark small" href="assets/Beyond-the-Score.pdf" target="_blank" rel="noopener">Paper <span aria-hidden="true">↗</span></a>
+  <a class="button dark small" href="index.html">中文研究博客 <span aria-hidden="true">↗</span></a>
 </header>
 <main id="top">
   <section class="hero" aria-labelledby="hero-title">
@@ -31,7 +31,7 @@
     <div class="hero-inner wrap">
       <div class="hero-overline"><span><i class="dot"></i> SIMPLE AI · ROBOT EVALUATION</span><span>RESEARCH PREVIEW · SEPTEMBER 2026</span></div>
       <div class="hero-heading"><h1 id="hero-title">Beyond<br>the <span>Score.</span></h1><p class="subtitle">Early Evaluations of GPT-6 Astra<br>as a Robot Critic</p></div>
-      <div class="hero-bottom"><p>A capable critic needs more than a high score. <br>We examine what it notices, what it misses, <br>and what the metrics actually reward.</p><div class="actions"><a class="button light" href="#trajectories">Explore the evidence <span>↓</span></a><a class="button outline" href="assets/Beyond-the-Score.pdf" target="_blank" rel="noopener">Read the report ↗</a></div></div>
+      <div class="hero-bottom"><p>A capable critic needs more than a high score. <br>We examine what it notices, what it misses, <br>and what the metrics actually reward.</p><div class="actions"><a class="button light" href="#trajectories">Explore the evidence <span>↓</span></a><a class="button outline" href="index.html#setup">Read the methods ↗</a></div></div>
     </div>
   </section>
   <div class="metric-strip wrap" aria-label="Study zero-shot headline results">
@@ -101,7 +101,7 @@
     <details class="data-details"><summary>Evaluation conditions &amp; distinct RoboFail adaptations <span>+</span></summary><div class="protocol-grid"><div><h3>Inputs and examples</h3><p>Progress: five observed-prefix positions; one same- or similar-task training trajectory with six stage scores for ICL. Ranking: eight test frames; three random high/middle/low training references. Direct preference: both trajectories in one request.</p><p>RoboFail: original montage and question. Five fixed external image–question–answer demonstrations are reported disjoint by test trajectory. This does not establish environment, embodiment, near-duplicate, or pretraining independence.</p></div><div><h3>What remains unresolved</h3><p>Questions cluster in 15 sequences, and ranking pairs are dependent. Repeated-call variation and confidence intervals are unavailable. Requested model names do not establish backend equivalence or equal token budgets.</p><p>Media replays and model outputs are drawn from saved evaluations. They introduce no new aggregate benchmark scores.</p></div></div><h3>Guardian and PRIMO are different evaluation supports</h3><p>Guardian uses 153 execution / 30 planning examples; PRIMO uses 100 Cosmos-curated examples. The report includes their published results separately. No Astra score is available on either adaptation. In the Guardian table, +GF denotes training on GuardianFail-36k.</p><div class="protocol-grid"><div class="table-scroll" id="guardian-table"></div><div class="table-scroll" id="primo-table"></div></div></details>
   </section>
 
-  <section id="resources" class="section resources"><div class="wrap"><p class="eyebrow">REPORT &amp; MATERIALS</p><div class="resource-heading"><h2>Beyond the Score</h2><p>Early Evaluations of GPT-6 Astra as a Robot Critic<br>Simple AI · September 23, 2026 · Preliminary technical report</p></div><div class="resource-links"><a href="assets/Beyond-the-Score.pdf" target="_blank" rel="noopener"><span>Technical report</span><strong>Read the PDF ↗</strong></a><a href="data/report.json" download><span>Report tables &amp; definitions</span><strong>Download data ↓</strong></a><a href="data/rbm-cases.json" download><span>Trajectory media &amp; saved estimates</span><strong>Case data ↓</strong></a><a href="data/robofail-cases.json" download><span>RoboFail inputs &amp; model answers</span><strong>Case data ↓</strong></a></div><div class="citation-box"><div class="panel-top"><span class="eyebrow">BIBTEX</span><button id="copy-citation" class="text-button">Copy citation</button><span id="copy-status" role="status"></span></div><pre id="citation">@techreport{simpleai2026beyond,
+  <section id="resources" class="section resources"><div class="wrap"><p class="eyebrow">DATA &amp; MATERIALS</p><div class="resource-heading"><h2>Beyond the Score</h2><p>Early Evaluations of GPT-6 Astra as a Robot Critic<br>Simple AI · September 23, 2026 · Preliminary technical report</p></div><div class="resource-links"><a href="index.html"><span>Research blog · 中文</span><strong>Methods, findings &amp; limitations ↗</strong></a><a href="data/report.json" download><span>Report tables &amp; definitions</span><strong>Download data ↓</strong></a><a href="data/rbm-cases.json" download><span>Trajectory media &amp; saved estimates</span><strong>Case data ↓</strong></a><a href="data/robofail-cases.json" download><span>RoboFail inputs &amp; model answers</span><strong>Case data ↓</strong></a></div><div class="citation-box"><div class="panel-top"><span class="eyebrow">BIBTEX</span><button id="copy-citation" class="text-button">Copy citation</button><span id="copy-status" role="status"></span></div><pre id="citation">@techreport{simpleai2026beyond,
   title = {Beyond the Score: Early Evaluations of GPT-6 Astra
            as a Robot Critic},
   author = {{Simple AI}},
@@ -109,9 +109,9 @@
   year = {2026},
   month = sep,
   note = {Preliminary technical report, September 23}
-}</pre></div><p class="caption">Robot observations: RBM-EVAL-OOD and RoboFail / AHA. See the report’s references for original datasets and published baselines. Companion media is selected post hoc from the existing evaluation record.</p></div></section>
+}</pre></div><p class="caption">Robot observations: RBM-EVAL-OOD and RoboFail / AHA. See the <a href="index.html#resources">blog references</a> for original datasets and published baselines. Companion media is selected post hoc from the existing evaluation record.</p></div></section>
 </main>
 <footer class="wrap"><a class="brand" href="https://cloud.simpleai.tech/simple-world-lab/">SIMPLE<span>·AI</span></a><span>Beyond the Score · 2026</span><a href="#top">Back to top ↑</a></footer>
-<noscript><p class="no-script">Enable JavaScript for interactive charts and cases. The full results remain available in the linked PDF and JSON downloads.</p></noscript>
+<noscript><p class="no-script">Enable JavaScript for interactive charts and cases. The methods and findings are available in the research blog; complete result tables are available as JSON downloads.</p></noscript>
 </body>
 </html>
